@@ -10,7 +10,7 @@ LuxPresenter makes use of the following open-source software libraries, componen
 3. [libmpv Video Engine (LGPL-2.1+)](#2-libmpv-video-engine)
 4. [Google PDFium (BSD-3-Clause / Apache-2.0)](#3-google-pdfium)
 5. [Microsoft Edge WebView2 SDK & Runtime (BSD-3-Clause)](#4-microsoft-edge-webview2-sdk--runtime)
-6. [EasyList & EasyPrivacy Filters (GPL-3.0 / CC-BY-SA-3.0)](#5-easylist--easyprivacy-filter-lists)
+6. [uBlock Origin Extension (GPL-3.0)](#5-ublock-origin-extension)
 7. [LibreOffice Integration (MPL-2.0)](#6-libreoffice-integration)
 8. [King James Version Bible (Public Domain)](#7-king-james-version-bible)
 
@@ -24,7 +24,7 @@ LuxPresenter makes use of the following open-source software libraries, componen
 | **libmpv** | [mpv-player team](https://github.com/mpv-player/mpv) | LGPL-2.1+ | Hardware-accelerated background video & audio |
 | **PDFium** | [Google / Chromium](https://pdfium.googlesource.com/pdfium/) | BSD-3-Clause | Native PDF presentation page rendering |
 | **WebView2 SDK** | [Microsoft Corporation](https://developer.microsoft.com/microsoft-edge/webview2/) | BSD-3-Clause | Embedded browser runtime integration |
-| **EasyList** | [EasyList Authors](https://easylist.to/) | GPL-3.0 / CC-BY-SA 3.0 | Web content & ad blocker rules |
+| **uBlock Origin** | [Raymond Hill (gorhill)](https://github.com/gorhill/uBlock) | GPL-3.0 | Content filtering & ad blocker extension for WebView2 |
 | **LibreOffice** | [The Document Foundation](https://www.documentfoundation.org/) | MPL-2.0 | Background headless PPTX/ODP to PDF conversion |
 | **KJV Bible** | [Project Gutenberg #10](https://www.gutenberg.org/ebooks/10) | Public Domain | Default offline Scripture database |
 
@@ -159,13 +159,13 @@ A PARTICULAR PURPOSE ARE DISCLAIMED.
 
 ---
 
-## 5. EasyList & EasyPrivacy Filter Lists
+## 5. uBlock Origin Extension
 
-* **License:** Dual licensed under GPL-3.0 or later and Creative Commons Attribution-ShareAlike 3.0 Unported (CC-BY-SA 3.0)
-* **Authors:** The EasyList authors (https://easylist.to/)
-* **Files:** `Data/AdBlock/easylist.txt`, `Data/AdBlock/easyprivacy.txt`
+* **License:** GNU General Public License version 3 (GPL-3.0)
+* **Author:** Raymond Hill (gorhill) and contributors
+* **Repository:** https://github.com/gorhill/uBlock
 
-The lists are distributed as unmodified data files loaded by LuxPresenter's internal ad-blocking engine. Users can update them anytime via `Options > Online`.
+LuxPresenter bundles the unmodified uBlock Origin WebExtension to provide fast, efficient, and reliable content filtering, anti-tracking, and advertisement blocking inside the embedded WebView2 browser tab. Complete source code is available at the upstream repository above.
 
 ---
 

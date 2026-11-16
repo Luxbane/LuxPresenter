@@ -1,0 +1,4 @@
+[Adblock Plus 2.0]
+! Title: EasyPrivacy Test Fixture
+! Last modified: 01 Jan 2030 00:00 UTC
+||telemetry.example.org^$script

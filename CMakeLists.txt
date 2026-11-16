@@ -125,9 +125,11 @@ add_custom_command(TARGET LuxPresenter POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${LUX_PORTABLE_DIR}/Data"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_SOURCE_DIR}/data/bibles.json" "${LUX_PORTABLE_DIR}/Data/bibles.json")
-# Ad blocker filter-list snapshot (EasyList + EasyPrivacy, unmodified; see licenses/EasyList-NOTICE.txt).
-add_custom_command(TARGET LuxPresenter POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/data/adblock" "${LUX_PORTABLE_DIR}/Data/AdBlock")
+# Ad blocker filter-list snapshot (optional fallback; uBlock Origin is used primarily)
+if(EXISTS "${CMAKE_SOURCE_DIR}/data/adblock")
+    add_custom_command(TARGET LuxPresenter POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/data/adblock" "${LUX_PORTABLE_DIR}/Data/AdBlock")
+endif()
 # uBlock Origin extension bundle (1.76.2 unpacked, MV2)
 add_custom_command(TARGET LuxPresenter POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory

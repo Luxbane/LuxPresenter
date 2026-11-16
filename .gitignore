@@ -58,3 +58,6 @@ Database/
 
 # Raw third-party license text files (consolidated into THIRD_PARTY_LICENSES.md)
 /licenses/
+
+# Legacy adblock text snapshots (uBlock Origin extension is used instead)
+/data/adblock/

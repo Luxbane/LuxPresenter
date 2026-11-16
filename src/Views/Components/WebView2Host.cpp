@@ -228,10 +228,13 @@ void WebView2Host::startEnvironment(int index)
                                   "the Evergreen WebView2 Runtime."));
     };
 
-    // Enable browser extensions (required for full uBlock Origin MV2 support)
+    // Enable browser extensions (required for full uBlock Origin MV2 support) and disable bloat features
     auto envOptions = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
     if (envOptions) {
         envOptions->put_AreBrowserExtensionsEnabled(TRUE);
+        envOptions->put_AdditionalBrowserArguments(
+            L"--disable-features=msEdgeSidebarV2,msHub,msEdgeShopping,msEdgeFeed,msEdgeCopilot,Translate "
+            L"--disable-background-networking --disable-sync --no-pings");
     }
 
     const HRESULT hr = createEnv(
