@@ -6,7 +6,7 @@
 /out/
 CMakeUserPresets.json
 
-# C++ Object and linker files
+# C++ Object, binary, and linker artifacts
 *.obj
 *.ilk
 *.pdb
@@ -15,12 +15,27 @@ CMakeUserPresets.json
 *.idb
 *.tmp
 *.log
+*.dmp
+*.bak
+*.orig
 test_out.txt
 display_log.txt
+
+# Root temporary files and dev outputs
+/*.png
+/*.fws
+!resources/**
+!tests/fixtures/**
+
+# Internal project & AI guidelines
+Rules.md
+
+# Windows system files
 desktop.ini
 Thumbs.db
+$RECYCLE.BIN/
 
-# Visual Studio & IDE files
+# Visual Studio & IDE configuration
 .vs/
 .vscode/
 .idea/
@@ -35,7 +50,8 @@ Thumbs.db
 /third_party/libreoffice/
 /third_party/webview2-runtime/
 
-# Runtime caches
+# Runtime caches and local user databases
 PresentationCache/
 WebView2Data/
 Thumbnails/
+Database/
