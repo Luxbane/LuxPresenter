@@ -55,3 +55,6 @@ PresentationCache/
 WebView2Data/
 Thumbnails/
 Database/
+
+# Raw third-party license text files (consolidated into THIRD_PARTY_LICENSES.md)
+/licenses/

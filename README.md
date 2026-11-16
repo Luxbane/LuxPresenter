@@ -120,6 +120,8 @@ LuxPresenter incorporates open-source libraries under their respective licenses:
 | **uBlock Origin** | GPL-3.0 | Web content and ad blocker extension |
 | **King James Version (KJV)** | Public Domain | Default bundled Scripture database |
 
+For full third-party notices and complete license texts, see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
 ---
 
 ## License & Author
