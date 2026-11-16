@@ -125,6 +125,8 @@ LuxPresenter incorporates open-source libraries under their respective licenses:
 ## License & Author
 
 LuxPresenter is created and maintained by **Luxbane**.
-* GitHub: [@Luxbane](https://github.com/Luxbane)
-* Repository: [https://github.com/Luxbane/LuxPresenter](https://github.com/Luxbane/LuxPresenter)
-* itch.io: [https://luxbane.itch.io/luxpresenter](https://luxbane.itch.io/luxpresenter)
+
+* **License:** Licensed under the [GNU General Public License v3.0](LICENSE) (GPL-3.0). Free and open-source forever.
+* **GitHub:** [@Luxbane](https://github.com/Luxbane)
+* **Repository:** [https://github.com/Luxbane/LuxPresenter](https://github.com/Luxbane/LuxPresenter)
+* **itch.io:** [https://luxbane.itch.io/luxpresenter](https://luxbane.itch.io/luxpresenter)
