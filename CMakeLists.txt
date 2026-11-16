@@ -145,6 +145,10 @@ set(LUX_MPV_DLL "${CMAKE_SOURCE_DIR}/third_party/mpv-lgpl/libmpv-2.dll")
 if(EXISTS "${LUX_MPV_DLL}")
     add_custom_command(TARGET LuxPresenter POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${LUX_MPV_DLL}" "${LUX_PORTABLE_DIR}")
+    if(EXISTS "${CMAKE_SOURCE_DIR}/third_party/mpv-lgpl/vulkan-1.dll")
+        add_custom_command(TARGET LuxPresenter POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third_party/mpv-lgpl/vulkan-1.dll" "${LUX_PORTABLE_DIR}")
+    endif()
 endif()
 foreach(dll "${LUX_PDFIUM_DLL}" "${LUX_WEBVIEW2_LOADER_DLL}")
     if(EXISTS "${dll}")

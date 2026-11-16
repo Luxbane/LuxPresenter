@@ -256,7 +256,17 @@ BackgroundDialog::BackgroundDialog(DataService& data, const QString& current, QW
     });
     connect(m_okBtn, &QPushButton::clicked, this, &QDialog::accept);
     connect(m_cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
-    connect(&BackgroundThumbnails::instance(), &BackgroundThumbnails::ready, this, [this] { refreshIcons(); onSelectionChanged(); });
+    connect(&BackgroundThumbnails::instance(), &BackgroundThumbnails::ready, this, [this](const QString& path) {
+        for (int i = 0; i < m_list->count() && i < m_items.size(); ++i) {
+            if (m_items.at(i).filePath == path) {
+                m_list->item(i)->setIcon(iconFor(m_items.at(i)));
+                break;
+            }
+        }
+        if (selectedValue() == path) {
+            m_canvas->setBackground(path);
+        }
+    });
 
     reload(Backgrounds::usable(current));
 }

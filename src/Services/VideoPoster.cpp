@@ -4,6 +4,7 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
+#include <QMutex>
 #include <QThread>
 #include <clocale>
 namespace Lux {
@@ -14,6 +15,17 @@ bool VideoPoster::generate(const QString& videoPath, const QString& outPng, QStr
             *error = m;
         return false;
     };
+    if (QFileInfo(outPng).size() > 0)
+        return true;
+
+    // libmpv is not safe to initialize concurrently from multiple background threads.
+    // Serializing poster generation prevents thread exhaustion, high memory spikes, and crashes.
+    static QMutex s_posterMutex;
+    QMutexLocker locker(&s_posterMutex);
+
+    if (QFileInfo(outPng).size() > 0)
+        return true;
+
     MpvApi& api = MpvApi::instance();
     if (!api.isAvailable() && !api.load())
         return fail(api.lastError());

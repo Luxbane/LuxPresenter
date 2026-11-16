@@ -1,6 +1,6 @@
 # Runtime DLLs next to the test executables (PDF engine, WebView2 loader).
 function(lux_test_runtime target)
-    foreach(dll "${LUX_PDFIUM_DLL}" "${LUX_WEBVIEW2_LOADER_DLL}")
+    foreach(dll "${LUX_PDFIUM_DLL}" "${LUX_WEBVIEW2_LOADER_DLL}" "${CMAKE_SOURCE_DIR}/third_party/mpv-lgpl/libmpv-2.dll" "${CMAKE_SOURCE_DIR}/third_party/mpv-lgpl/vulkan-1.dll")
         if(EXISTS "${dll}")
             add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${dll}" "$<TARGET_FILE_DIR:${target}>")
         endif()
