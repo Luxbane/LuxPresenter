@@ -144,6 +144,9 @@ void ProjectionService::setLiveSlide(const std::optional<Slide>& slide, const QS
 {
     m_state.isPresentationMode = false;
     m_state.presentationPdfPath.clear();
+    m_state.isVideoMode = false;
+    m_state.isVideoPlaying = false;
+    m_state.mediaFilePath.clear();
     m_state.activeSlide = slide;
     m_state.activeBackground = background;
     push();
@@ -151,6 +154,9 @@ void ProjectionService::setLiveSlide(const std::optional<Slide>& slide, const QS
 
 void ProjectionService::setBackground(const QString& background)
 {
+    m_state.isVideoMode = false;
+    m_state.isVideoPlaying = false;
+    m_state.mediaFilePath.clear();
     m_state.activeBackground = background;
     push();
 }

@@ -553,6 +553,18 @@ private slots:
         cmds = k.c.takeVideoCommands();
         QCOMPARE(cmds.size(), 1);
         QVERIFY(cmds[0].kind == VideoCommand::Kind::Pause);
+
+        // Returning from standalone media video to slides: stops video and restores root background
+        k.now = 3000;
+        st.isVideoMode = false;
+        st.mediaFilePath.clear();
+        st.activeSlide = slide(QStringLiteral("B"), QStringLiteral("beta"));
+        k.c.applyState(st);
+        QVERIFY(!k.c.inVideoMode());
+        QVERIFY(!k.c.videoShowsThrough());
+        cmds = k.c.takeVideoCommands();
+        QVERIFY(!cmds.isEmpty());
+        QVERIFY(cmds.last().kind == VideoCommand::Kind::Stop);
     }
 
     void marginsFollowReferenceFormula()
@@ -699,10 +711,11 @@ private slots:
                     if (qRed(img.pixel(x, y)) > 200) {
                         x0 = qMin(x0, x); x1 = qMax(x1, x); y0 = qMin(y0, y); y1 = qMax(y1, y);
                     }
-            const double k2 = qMin(sz.width() / 400.0, sz.height() / 400.0);   // fit scale
+            const double kw = sz.width() / 400.0;
+            const double kh = sz.height() / 400.0;
             const int w = x1 - x0 + 1, h = y1 - y0 + 1;
-            QVERIFY2(qAbs(w - h) <= 3, qPrintable(QStringLiteral("marker distorted %1x%2 on %3x%4").arg(w).arg(h).arg(sz.width()).arg(sz.height())));
-            QVERIFY2(qAbs(w - 100 * k2) <= 4, qPrintable(QString::number(w)));
+            QVERIFY2(qAbs(w - 100 * kw) <= 4, qPrintable(QString::number(w)));
+            QVERIFY2(qAbs(h - 100 * kh) <= 4, qPrintable(QString::number(h)));
             QVERIFY(qAbs((x0 + x1) / 2.0 - sz.width() / 2.0) <= 2 && qAbs((y0 + y1) / 2.0 - sz.height() / 2.0) <= 2);
         }
     }

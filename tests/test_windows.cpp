@@ -402,8 +402,8 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(decks.player(0)->hasVideo(), 20000);
         QCOMPARE(decks.player(0)->property("mute"), QStringLiteral("yes"));       // backgrounds are silent
         QCOMPARE(decks.player(0)->property("loop-file"), QStringLiteral("inf"));  // and loop
-        QCOMPARE(decks.player(0)->property("keepaspect"), QStringLiteral("yes")); // never distorted ...
-        QCOMPARE(decks.player(0)->property("panscan").toDouble(), 0.0);           // ... and fitted (keep aspect, no crop)
+        QCOMPARE(decks.player(0)->property("keepaspect"), QStringLiteral("no"));  // background video stretches to match monitor
+        QCOMPARE(decks.player(0)->property("panscan").toDouble(), 0.0);
         const double p0 = decks.player(0)->position();
         QTest::qWait(600);
         QVERIFY2(decks.player(0)->position() > p0, "deck 0 is playing");

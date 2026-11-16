@@ -79,12 +79,13 @@ bool MpvPlayer::load(const QString& path, Role role, bool loop, bool startPaused
         return false;
     if (role == Role::Background) {
         setProp("mute", "yes");
-        // Fit the output without distorting or cropping: keep the aspect ratio with letterboxing (panscan 0.0)
-        setProp("keepaspect", "yes");
+        // Background video scales to monitor without letterboxing or cropping
+        setProp("keepaspect", "no");
         setProp("panscan", "0.0");
         setProp("loop-file", "inf");
     } else {
         setProp("mute", "no");
+        // Standalone media video keeps its file aspect ratio with letterboxing
         setProp("keepaspect", "yes");
         setProp("panscan", "0.0");
         setProp("loop-file", loop ? "inf" : "no");

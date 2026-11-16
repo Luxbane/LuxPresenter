@@ -192,8 +192,7 @@ void ProjectionComposer::setLogoOverlay(bool show, const QString& transition, in
 
 void ProjectionComposer::stopBackgroundVideo()
 {
-    // StopMpvBackgroundVideo: only when no standalone media video is on screen.
-    if (!m_inVideoMode && m_bgVideoActive) {
+    if (m_bgVideoActive) {
         emitVideo(VideoCommand::Kind::Stop);
         m_bgVideoActive = false;
         m_videoPaused = false;
@@ -275,7 +274,10 @@ void ProjectionComposer::applyBackground(const QString& bg, const QString& trans
             const bool useBlend = isBlend(transition) && !m_first;
             if (useBlend && durationMs > 0) {
                 m_bgImgFade[next].run(0.0, 1.0, durationMs, t);
-                later(t + durationMs, [this] { stopBackgroundVideo(); });
+                later(t + durationMs, [this] {
+                    stopBackgroundVideo();
+                    m_rootBackground = QStringLiteral("#001833");
+                });
                 if (!m_bgImgPath[out].isEmpty() && m_bgImgFade[out].value(t) > 0.01) {
                     m_bgImgFade[out].run(m_bgImgFade[out].value(t), 0.0, durationMs, t);
                     later(t + durationMs, [this, out] {
@@ -290,6 +292,7 @@ void ProjectionComposer::applyBackground(const QString& bg, const QString& trans
                 m_bgImgFade[out].set(0.0);
                 m_bgImgPath[out].clear();
                 stopBackgroundVideo();
+                m_rootBackground = QStringLiteral("#001833");
             }
             m_activeBgLayer = next;
         }
@@ -422,6 +425,8 @@ void ProjectionComposer::applyState(const ProjectionState& st)
         m_hasCurrentBg = false; // force the song background to be re-applied
         m_currentBg.clear();
         m_videoPaused = false;
+        emitVideo(VideoCommand::Kind::Stop);
+        m_rootBackground = QStringLiteral("#001833");
     }
 
     // 2. Logo overlay
