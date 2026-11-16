@@ -54,7 +54,7 @@ private:
     bool m_converting = false;
     bool m_lastBusy = false;
     QString m_soffice;
-    int m_timeout = 45000;
+    int m_timeout = 180000;
     OfficeConverter m_converter;
 };
 

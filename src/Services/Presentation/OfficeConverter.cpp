@@ -189,6 +189,25 @@ void OfficeConverter::convert(const QString& input, const QString& outputDir, co
     m_expectedPdf = QDir(outputDir).filePath(QFileInfo(input).completeBaseName() + QStringLiteral(".pdf"));
     QFile::remove(m_expectedPdf);
 
+    // Remove stale lock files that can cause headless LibreOffice to freeze waiting for user input
+    QFile::remove(QDir(userProfileDir).filePath(QStringLiteral(".lock")));
+    QFile::remove(QDir(userProfileDir).filePath(QStringLiteral(".~lock")));
+
+#ifdef Q_OS_WIN
+    // Clear any lingering or orphaned headless soffice processes from previous interrupted attempts
+    PROCESS_INFORMATION pi{};
+    STARTUPINFOW si{};
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
+    wchar_t cmd[] = L"taskkill.exe /F /IM soffice.bin /IM soffice.exe";
+    if (CreateProcessW(nullptr, cmd, nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
+        WaitForSingleObject(pi.hProcess, 1000);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+    }
+#endif
+
     m_process = std::make_unique<QProcess>();
     // Background only: no console window, no splash, no first-start wizard, no document lock files, never visible.
     QStringList args{QStringLiteral("--headless"), QStringLiteral("--invisible"), QStringLiteral("--norestore"), QStringLiteral("--nologo"),

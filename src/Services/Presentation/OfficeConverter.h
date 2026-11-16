@@ -57,7 +57,7 @@ private:
     void killProcessTree();
 
     QString m_override;
-    int m_timeoutMs = 45000;
+    int m_timeoutMs = 180000;
     std::unique_ptr<QProcess> m_process;
     QTimer m_timer;
     QString m_expectedPdf;
