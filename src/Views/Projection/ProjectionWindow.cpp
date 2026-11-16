@@ -1,9 +1,12 @@
 #include "Views/Projection/ProjectionWindow.h"
 
+#include "Services/AlertService.h"
 #include "Services/PageImageCache.h"
 #include "Views/Components/TextRender.h"
 
 #include <QColor>
+#include <QDateTime>
+#include <QFontMetricsF>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
@@ -65,6 +68,20 @@ ProjectionWindow::ProjectionWindow(const ProjectionComposer* composer, QWidget* 
     setAttribute(Qt::WA_NoSystemBackground);
     setFocusPolicy(Qt::NoFocus);
     setWindowTitle(QStringLiteral("LuxPresenter Projection"));
+
+    connect(&AlertService::instance(), &AlertService::alertStateChanged, this, [this] {
+        if (AlertService::instance().isAlertVisible()) {
+            if (!m_alertAnimTimer.isActive()) {
+                m_alertPassStartTime = QDateTime::currentMSecsSinceEpoch();
+                m_alertAnimTimer.start(16);
+            }
+        } else {
+            m_alertAnimTimer.stop();
+            m_alertPassStartTime = 0;
+        }
+        update();
+    });
+    connect(&m_alertAnimTimer, &QTimer::timeout, this, QOverload<>::of(&QWidget::update));
 }
 
 QPixmap ProjectionWindow::image(const QString& path)
@@ -337,6 +354,67 @@ void ProjectionWindow::paintScene(QPainter* p, const QRectF& target, qint64 t)
         paintLogo(p);
         p->restore();
     }
+    if (AlertService::instance().isAlertVisible()) {
+        paintAlert(p, target);
+    }
+    p->restore();
+}
+
+void ProjectionWindow::paintAlert(QPainter* p, const QRectF& target)
+{
+    if (!AlertService::instance().isAlertVisible())
+        return;
+
+    const QString text = AlertService::instance().currentActiveMessage().text;
+    if (text.isEmpty())
+        return;
+
+    // Height matches 76px on 1080p height
+    const qreal bannerH = qMax(32.0, 76.0 * target.height() / 1080.0);
+    const QRectF bannerRect(target.left(), target.bottom() - bannerH, target.width(), bannerH);
+
+    p->save();
+    p->setOpacity(1.0);
+    p->fillRect(bannerRect, QColor(0xFF, 0x00, 0x00));
+    p->setClipRect(bannerRect);
+
+    QFont f(QStringLiteral("Tahoma"));
+    f.setBold(true);
+    f.setPixelSize(qMax(14, qRound(46.0 * target.height() / 1080.0)));
+    p->setFont(f);
+
+    QFontMetricsF fm(f);
+    const qreal textW = fm.horizontalAdvance(text);
+    const qreal totalDist = target.width() + textW;
+    const qreal speed = qMax(50.0, 180.0 * (target.width() / 1920.0)); // 180 design-px/sec
+    const qreal durationSec = qMax(4.0, totalDist / speed);
+
+    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+    if (m_alertPassStartTime <= 0)
+        m_alertPassStartTime = now;
+
+    qreal elapsed = (now - m_alertPassStartTime) / 1000.0;
+    if (elapsed >= durationSec) {
+        m_alertPassStartTime = now;
+        AlertService::instance().notifyPassCompleted();
+        if (!AlertService::instance().isAlertVisible()) {
+            p->restore();
+            return;
+        }
+        elapsed = 0;
+    }
+
+    const qreal x = target.right() - (elapsed / durationSec) * totalDist;
+    const qreal y = bannerRect.top() + (bannerH - fm.height()) / 2.0 + fm.ascent();
+
+    // Drop shadow
+    p->setPen(QColor(0, 0, 0, 240));
+    p->drawText(QPointF(x + 2.5, y + 2.5), text);
+
+    // Foreground white text
+    p->setPen(Qt::white);
+    p->drawText(QPointF(x, y), text);
+
     p->restore();
 }
 

@@ -5,6 +5,7 @@
 #include <QHash>
 #include <QImage>
 #include <QPixmap>
+#include <QTimer>
 #include <QWidget>
 
 #include <functional>
@@ -58,6 +59,7 @@ private:
     QPixmap image(const QString& path);
     void paintLayer(QPainter* p, int layer);
     void paintLogo(QPainter* p);
+    void paintAlert(QPainter* p, const QRectF& target);
 
     const ProjectionComposer* m_composer;
     QHash<QString, QPixmap> m_images;
@@ -69,6 +71,8 @@ private:
     bool m_cacheEnabled = true;
     int m_fontSerial[2] = {-1, -1};
     qreal m_fontSize[2] = {0, 0};
+    QTimer m_alertAnimTimer;
+    qint64 m_alertPassStartTime = 0;
 };
 
 } // namespace Lux

@@ -4,6 +4,7 @@
 #include "Services/DataService.h"
 #include "Services/JsonFile.h"
 #include "Services/LyricsFormatter.h"
+#include "Services/AlertService.h"
 
 #include <QDir>
 #include <QFile>
@@ -465,6 +466,28 @@ private slots:
         QCOMPARE(s.type, SlideType::Scripture);
         QCOMPARE(s.subtitle, QStringLiteral("KJV"));
         QCOMPARE(s.content, first.text.toUpper()); // default settings capitalise all words
+    }
+
+    void alertService()
+    {
+        AlertService& svc = AlertService::instance();
+        svc.clear();
+        QVERIFY(!svc.isAlertVisible());
+        QCOMPARE(svc.runningMessages().size(), 0);
+
+        svc.addMessage(QStringLiteral("Test Alert"), 2);
+        QVERIFY(svc.isAlertVisible());
+        QCOMPARE(svc.runningMessages().size(), 1);
+        QCOMPARE(svc.currentActiveMessage().text, QStringLiteral("Test Alert"));
+        QCOMPARE(svc.currentActiveMessage().count, 2);
+
+        svc.notifyPassCompleted();
+        QVERIFY(svc.isAlertVisible());
+        QCOMPARE(svc.currentActiveMessage().count, 1);
+
+        svc.notifyPassCompleted();
+        QVERIFY(!svc.isAlertVisible());
+        QCOMPARE(svc.runningMessages().size(), 0);
     }
 };
 

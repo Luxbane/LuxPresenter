@@ -19,6 +19,7 @@
 #include "Views/Components/SlidePaneView.h"
 #include "Views/Components/SongsTab.h"
 #include "Views/SongEditorWindow.h"
+#include "Views/MessageAlertWindow.h"
 #include "Views/Projection/ProjectionOutput.h"
 #include "Views/UiUtil.h"
 
@@ -323,7 +324,16 @@ void MainWindow::buildToolbar()
     auto* alert = track(new ClassicButton(ClassicButton::Kind::Icon, frame));
     alert->addIcon(Icon::Alert, 14, 14, 4);
     alert->addText(QStringLiteral("\u25BE"), tahoma(9), ClassicButton::ColorRole::Secondary);
-    plannedButton(alert, QStringLiteral("Alert Message"), 4);
+    alert->setToolTip(QStringLiteral("Alert Message"));
+    m_alertButton = alert;
+    connect(alert, &ClassicButton::clicked, this, [this] {
+        if (!m_alertWindow) {
+            m_alertWindow = new MessageAlertWindow(m_data, this);
+        }
+        m_alertWindow->show();
+        m_alertWindow->raise();
+        m_alertWindow->activateWindow();
+    });
 
     auto* logo = track(new ClassicButton(ClassicButton::Kind::Toggle, frame));
     logo->addIcon(Icon::Logo, 13, 13, 4);

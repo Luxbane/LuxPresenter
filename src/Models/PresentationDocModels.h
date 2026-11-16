@@ -50,6 +50,11 @@ struct AlertMessageItem
 {
     int count = 3;
     QString text;
+
+    bool operator==(const AlertMessageItem& other) const
+    {
+        return count == other.count && text == other.text;
+    }
 };
 
 } // namespace Lux

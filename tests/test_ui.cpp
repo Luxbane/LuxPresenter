@@ -195,8 +195,9 @@ private slots:
             enabled += b->isEnabled() ? 1 : 0;
         }
         // new/edit song, globe, donate, theme toggle + Go Live, Logo, Black, Clear, Live (Milestone 4);
-        // + Options (M6); Background (M6); Alert is still to come
-        QCOMPARE(enabled, 12);
+        // + Options (M6); Background (M6); Alert Message
+        QCOMPARE(enabled, 13);
+        QVERIFY(w.alertButton() && w.alertButton()->isEnabled());
         QVERIFY(w.globeButton()->isEnabled() && w.donateButton()->isEnabled() && w.themeButton()->isEnabled());
         QVERIFY(w.newSongButton()->isEnabled() && w.editSongButton()->isEnabled());
         QVERIFY(w.themeButton()->toolTip().contains(QStringLiteral("Dark Mode")));

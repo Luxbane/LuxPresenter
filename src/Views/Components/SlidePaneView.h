@@ -22,6 +22,7 @@ namespace Lux {
 
 class PageView;
 class SlideCanvas;
+class LiveAlertBannerWidget;
 
 // Preview / Live pane (SlidePaneView.xaml). Header "<Pane> - <item>", then one of three
 // pages: slide mode (stanza list over the rendered slide), media-player mode and
@@ -130,6 +131,7 @@ private:
     QStackedWidget* m_pages = nullptr;
     QListWidget* m_stanzas = nullptr;
     QSplitter* m_splitter = nullptr;
+    LiveAlertBannerWidget* m_alertBanner = nullptr;
     SlideCanvas* m_canvas = nullptr;
     QLabel* m_videoNote = nullptr;
     QLabel* m_docStatus = nullptr;

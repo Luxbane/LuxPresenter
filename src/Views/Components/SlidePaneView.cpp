@@ -6,6 +6,7 @@
 #include "Views/Components/PageView.h"
 #include "Views/Components/ProportionalSplitter.h"
 #include "Views/Components/SlideCanvas.h"
+#include "Views/Components/LiveAlertBannerWidget.h"
 #include "Views/UiUtil.h"
 
 #include <QHBoxLayout>
@@ -250,6 +251,11 @@ SlidePaneView::SlidePaneView(const QString& paneTitle, bool isLive, QWidget* par
     m_pages->addWidget(buildMediaPage());
     m_pages->addWidget(buildDocPage());
     root->addWidget(m_pages, 1);
+
+    if (m_isLive) {
+        m_alertBanner = new LiveAlertBannerWidget(this);
+        root->addWidget(m_alertBanner);
+    }
 
     connect(&m_pollTimer, &QTimer::timeout, this, [this] {
         if (!m_isLive && m_previewPlayer.isValid()) {

@@ -30,6 +30,7 @@ class ScheduleView;
 class SlidePaneView;
 class SongsTab;
 class ScripturesTab;
+class MessageAlertWindow;
 
 // Main application window (MainWindow.xaml + the Songs/Schedule parts of MainViewModel):
 // menu bar, upper toolbar, work area (left: Schedule + Library, centre: Preview, right: Live;
@@ -84,6 +85,7 @@ public:
     ClassicButton* blackButton() const { return m_blackButton; }
     ClassicButton* clearButton() const { return m_clearButton; }
     ClassicButton* liveButton() const { return m_liveButton; }
+    ClassicButton* alertButton() const { return m_alertButton; }
     QMenu* displayMenu() const { return m_displayMenu; }
     bool isLiveOutputActive() const;
     // PreviewKeyDown of the reference: returns true when the key was a projection shortcut.
@@ -219,7 +221,8 @@ private:
     PresentationService* m_presentations = nullptr;
     struct PendingDoc { QString path; int page = 0; bool goLive = false; bool active = false; } m_pendingDoc;
     ClassicButton *m_goLiveButton = nullptr, *m_logoButton = nullptr, *m_blackButton = nullptr,
-                  *m_clearButton = nullptr, *m_liveButton = nullptr;
+                  *m_clearButton = nullptr, *m_liveButton = nullptr, *m_alertButton = nullptr;
+    MessageAlertWindow* m_alertWindow = nullptr;
     QAction *m_goLiveAction = nullptr, *m_blackAction = nullptr, *m_clearAction = nullptr, *m_logoAction = nullptr,
             *m_liveOutputAction = nullptr;
     QMenu* m_displayMenu = nullptr;

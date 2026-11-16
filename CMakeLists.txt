@@ -48,6 +48,7 @@ add_library(luxcore STATIC
     src/Services/BibleLibrary.cpp
     src/Services/BackgroundUtil.cpp
     src/Services/VideoPoster.cpp
+    src/Services/AlertService.cpp
     src/Services/Presentation/OfficeConverter.cpp
 )
 target_include_directories(luxcore PUBLIC src)
@@ -67,6 +68,7 @@ add_library(luxui STATIC
     src/Views/SongEditorWindow.cpp
     src/Views/OptionsDialog.cpp
     src/Views/BackgroundDialog.cpp
+    src/Views/MessageAlertWindow.cpp
     src/Views/MainWindow.cpp
     src/Views/Components/ClassicButton.cpp
     src/Views/Components/TabStrip.cpp
@@ -78,6 +80,7 @@ add_library(luxui STATIC
     src/Views/Components/OnlineBrowserView.cpp
     src/Views/Components/LibraryView.cpp
     src/Views/Components/SlideCanvas.cpp
+    src/Views/Components/LiveAlertBannerWidget.cpp
     src/Views/Components/TextRender.cpp
     src/Views/Components/SlidePaneView.cpp
     src/Views/Components/ProportionalSplitter.cpp
