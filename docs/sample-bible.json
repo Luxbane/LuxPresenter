@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "id": "SAMPLE",
+  "name": "Sample Translation (demo text)",
+  "language": "en",
+  "copyright": "Demo text written for LuxPresenter; it is not a real Bible translation.",
+  "books": [
+    {
+      "id": 1,
+      "name": "Genesis",
+      "shortName": "Gen",
+      "chapters": [
+        ["Sample text for Genesis chapter 1, verse 1.", "Sample text for Genesis chapter 1, verse 2.", "Sample text for Genesis chapter 1, verse 3."],
+        ["Sample text for Genesis chapter 2, verse 1.", null, "Sample text for Genesis chapter 2, verse 3 (verse 2 is left out on purpose)."]
+      ]
+    },
+    {
+      "id": 43,
+      "name": "John",
+      "shortName": "Jn",
+      "chapters": [
+        ["Sample text for John chapter 1, verse 1.", "Sample text for John chapter 1, verse 2."]
+      ]
+    }
+  ]
+}

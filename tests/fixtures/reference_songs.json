@@ -1,0 +1,21 @@
+[
+  {
+    "Id": "11111111-2222-3333-4444-555555555555",
+    "Title": "Reference Song",
+    "Author": "A. Writer",
+    "Copyright": "PD",
+    "Key": "G",
+    "IsFavorite": true,
+    "LyricsRaw": "[Verse 1]\r\nLine one\r\nLine two\r\n\r\n[Chorus]\r\nSing",
+    "DefaultBackground": null,
+    "FontFamily": "Tahoma",
+    "FontSize": 13,
+    "IsBold": true,
+    "IsItalic": false,
+    "IsUnderline": false,
+    "HasShadow": true,
+    "HasOutline": true,
+    "FontColor": "#FFFFFF",
+    "SomeFutureField": 42
+  }
+]

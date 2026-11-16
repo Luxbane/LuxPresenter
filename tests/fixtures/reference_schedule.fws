@@ -1,0 +1,38 @@
+{
+  "Version": "1.0",
+  "SavedAt": "2026-11-13T10:11:12.1234567+07:00",
+  "Items": [
+    {
+      "Id": "aaaaaaaa-0000-0000-0000-000000000001",
+      "Title": "Ref Item",
+      "TypeLabel": "Song",
+      "Category": 0,
+      "Presentation": {
+        "Id": "bbbbbbbb-0000-0000-0000-000000000001",
+        "Title": "Ref Item",
+        "Subtitle": "By Someone",
+        "Category": 0,
+        "BackgroundPath": null,
+        "Slides": [
+          {
+            "Id": "cccccccc-0000-0000-0000-000000000001",
+            "Label": "Verse 1",
+            "Content": "HELLO\nWORLD",
+            "Title": "Ref Item",
+            "Subtitle": "",
+            "CustomBackgroundPath": null,
+            "Type": 1,
+            "FontFamily": "Tahoma",
+            "FontSize": 13,
+            "IsBold": true,
+            "IsItalic": false,
+            "IsUnderline": false,
+            "HasShadow": true,
+            "HasOutline": true,
+            "FontColor": "#FFFFFF"
+          }
+        ]
+      }
+    }
+  ]
+}

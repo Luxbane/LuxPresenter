@@ -1,0 +1,28 @@
+﻿LibreOffice (presentation conversion engine)
+============================================
+
+LuxPresenter converts PowerPoint / OpenDocument presentations to PDF with its own copy of LibreOffice, which lives
+in the "Engines\LibreOffice" folder of the Portable package. It runs only as a hidden background process
+(soffice --headless --convert-to pdf); it is never used to show anything to the audience.
+
+  Product  : LibreOffice 26.8.3 (x86-64), The Document Foundation
+  Package  : LibreOffice_26.8.3_Win_x86-64.msi, the official release installer
+             https://download.documentfoundation.org/libreoffice/stable/26.8.3/win/x86_64/
+  SHA-256  : 0e6918c273eabbdbbd800ee0dacbbf130a14c13c2e4cec861b06dd59e015bf94 (matches the published checksum;
+             the installer is Authenticode-signed by The Document Foundation)
+  Method   : "msiexec /a" administrative extraction of that MSI (no installation, no registry entries). The files are
+             not modified. The only additions are Microsoft's redistributable Visual C++ runtime DLLs (vcruntime140,
+             vcruntime140_1, msvcp140, msvcp140_1, msvcp140_2) placed next to the LibreOffice program files, because the
+             official installer relies on a system-wide runtime that a portable copy cannot assume. The installer file
+             itself is not shipped.
+
+Licence: LibreOffice is licensed under the Mozilla Public License 2.0 and includes many third-party components under
+their own licences. The complete licence information shipped by The Document Foundation is in the same folder:
+Engines\LibreOffice\license.txt, LICENSE.html, NOTICE and CREDITS.fodt. LuxPresenter does not modify LibreOffice and
+runs it as a separate process, so the MPL-2.0 obligations do not extend to LuxPresenter.
+
+Source code of LibreOffice and of the components it includes is available from The Document Foundation:
+https://www.libreoffice.org/download/source-code/  and  https://git.libreoffice.org/core
+
+LibreOffice and The Document Foundation are trademarks of their owners. LuxPresenter is not affiliated with or
+endorsed by The Document Foundation.

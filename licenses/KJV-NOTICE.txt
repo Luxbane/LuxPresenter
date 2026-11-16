@@ -1,0 +1,21 @@
+﻿King James Version (KJV) - bundled Bible text
+=============================================
+
+File:      Data/bibles.json (built from data/bibles.json in the source tree)
+Content:   31,102 verses, 66 books, Version "KJV"
+Source:    Project Gutenberg eBook #10, "The King James Version of the Bible"
+           https://www.gutenberg.org/ebooks/10  (plain text, release of 29 October 2024)
+           SHA-256 of the downloaded pg10.txt: 0204ADAED1F25700AA854218CAE63C7172228C41088F335E99167A071EED83C0
+Conversion: verses were split at the "chapter:verse" markers of that text, white space was normalised and the
+           typographic apostrophes were replaced by plain ones. No wording was changed or added.
+           SHA-256 of the resulting Data/bibles.json: 5FB87869E76A6D49A2B795D5FD688DDF3707D13197AECB4EE37F49943A0E5A26
+
+Status:    The King James Version (1611, revised 1769 text) is in the public domain in the United States and in most
+           other countries. In the United Kingdom the Crown holds a perpetual letters patent for printing the
+           Authorized Version; it does not restrict private reading or projection in a church service, but anyone
+           who prints and sells copies in the UK should check with the Crown's patentee (Cambridge University Press).
+           The Project Gutenberg license text (https://www.gutenberg.org/policy/license.html) applies to the
+           Project Gutenberg name and trademark; the text bundled here carries no Project Gutenberg name or logo.
+
+No other Bible translation is bundled. Translations such as "Alkitab Terjemahan Baru (TB)" are copyrighted and must
+be supplied by the user (File > Scriptures > Import Bible Translation); see docs/BIBLE-JSON.md.

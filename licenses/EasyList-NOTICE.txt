@@ -1,0 +1,14 @@
+﻿EasyList and EasyPrivacy - filter lists used by the Online tab ad blocker
+=========================================================================
+
+Files:    Data/AdBlock/easylist.txt, Data/AdBlock/easyprivacy.txt  (unmodified copies, downloaded 15 Nov 2026)
+Source:   https://easylist.to/easylist/easylist.txt and https://easylist.to/easylist/easyprivacy.txt
+Authors:  "The EasyList authors" (https://easylist.to/)
+Licence:  Dual licensed under the GNU General Public License v3 (or later) and the Creative Commons
+          Attribution-ShareAlike 3.0 Unported licence (or later), at the user's option.
+          https://easylist.to/pages/licence.html
+
+The lists are data files read by the program's own filter engine; they are shipped unmodified and attributed here.
+"Update filter lists now" in Options > Online downloads newer copies from the addresses above into
+%APPDATA%\LuxPresenterQt6\Data\AdBlock (or the portable Data\AdBlock folder). A download is only used after it has
+been validated; otherwise the previous copy stays in use.

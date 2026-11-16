@@ -1,0 +1,89 @@
+{
+    "Items": [
+        {
+            "Category": 0,
+            "Id": "39fa2b0a-f077-4a8f-b59e-cc7a872f3afb",
+            "Presentation": {
+                "BackgroundPath": null,
+                "Category": 0,
+                "Id": "e27c55eb-e61d-4b15-bb4c-b52874603132",
+                "Slides": [
+                    {
+                        "Content": "AMAZING GRACE! HOW SWEET THE SOUND\nTHAT SAVED A WRETCH LIKE ME!\nI ONCE WAS LOST, BUT NOW AM FOUND;\nWAS BLIND, BUT NOW I SEE.",
+                        "CustomBackgroundPath": null,
+                        "FontColor": "#FFFFFF",
+                        "FontFamily": "Tahoma",
+                        "FontSize": 13,
+                        "HasOutline": true,
+                        "HasShadow": true,
+                        "Id": "3c600c72-3ba8-4ae7-a91c-e26ed3b1026f",
+                        "IsBold": true,
+                        "IsItalic": false,
+                        "IsUnderline": false,
+                        "Label": "Verse 1",
+                        "Subtitle": "",
+                        "Title": "Amazing Grace",
+                        "Type": 1
+                    },
+                    {
+                        "Content": "'TWAS GRACE THAT TAUGHT MY HEART TO FEAR,\nAND GRACE MY FEARS RELIEVED;\nHOW PRECIOUS DID THAT GRACE APPEAR\nTHE HOUR I FIRST BELIEVED.",
+                        "CustomBackgroundPath": null,
+                        "FontColor": "#FFFFFF",
+                        "FontFamily": "Tahoma",
+                        "FontSize": 13,
+                        "HasOutline": true,
+                        "HasShadow": true,
+                        "Id": "55c5c0f5-4ca0-4a98-a0b8-4096ce7ff10e",
+                        "IsBold": true,
+                        "IsItalic": false,
+                        "IsUnderline": false,
+                        "Label": "Verse 2",
+                        "Subtitle": "",
+                        "Title": "Amazing Grace",
+                        "Type": 1
+                    },
+                    {
+                        "Content": "THROUGH MANY DANGERS, TOILS AND SNARES,\nI HAVE ALREADY COME;\n'TIS GRACE HATH BROUGHT ME SAFE THUS FAR,\nAND GRACE WILL LEAD ME HOME.",
+                        "CustomBackgroundPath": null,
+                        "FontColor": "#FFFFFF",
+                        "FontFamily": "Tahoma",
+                        "FontSize": 13,
+                        "HasOutline": true,
+                        "HasShadow": true,
+                        "Id": "e43bf0d1-51c6-4b09-98c9-ce96a8868375",
+                        "IsBold": true,
+                        "IsItalic": false,
+                        "IsUnderline": false,
+                        "Label": "Verse 3",
+                        "Subtitle": "",
+                        "Title": "Amazing Grace",
+                        "Type": 1
+                    },
+                    {
+                        "Content": "WHEN WE'VE BEEN THERE TEN THOUSAND YEARS,\nBRIGHT SHINING AS THE SUN,\nWE'VE NO LESS DAYS TO SING GOD'S PRAISE\nTHAN WHEN WE'D FIRST BEGUN.",
+                        "CustomBackgroundPath": null,
+                        "FontColor": "#FFFFFF",
+                        "FontFamily": "Tahoma",
+                        "FontSize": 13,
+                        "HasOutline": true,
+                        "HasShadow": true,
+                        "Id": "0408efa0-1809-4d34-a385-b9cbe495cf42",
+                        "IsBold": true,
+                        "IsItalic": false,
+                        "IsUnderline": false,
+                        "Label": "Verse 4",
+                        "Subtitle": "",
+                        "Title": "Amazing Grace",
+                        "Type": 1
+                    }
+                ],
+                "Subtitle": "By John Newton",
+                "Title": "Amazing Grace"
+            },
+            "Title": "Amazing Grace",
+            "TypeLabel": "Song"
+        }
+    ],
+    "SavedAt": "2026-11-14T10:59:13.764",
+    "Version": "1.0"
+}

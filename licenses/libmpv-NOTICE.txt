@@ -1,0 +1,23 @@
+libmpv-2.dll (video playback engine)
+====================================
+
+This folder's libmpv-2.dll is an unmodified LGPL build of the mpv client library:
+
+  Package : mpv-dev-lgpl-x86_64-20261113-git-fe753a7824.7z
+  Builder : zhongfly/mpv-winbuild
+  Release : https://github.com/zhongfly/mpv-winbuild/releases/tag/2026-11-13-fe753a7824
+  SHA-256 : d4f9e4ae675685d1a35d926aac65573cc05e71ea7391c344a91f325f73e4386e
+  Source  : https://github.com/mpv-player/mpv (commit fe753a7824 and the builder's pinned dependencies)
+
+mpv is licensed under the GNU Lesser General Public License v2.1 or later when built with GPL features
+disabled (meson option -Dgpl=false), which is how this library was built. It statically contains FFmpeg
+built under the GNU Lesser General Public License v3 or later. Copies of the licenses are in this folder:
+LGPL-2.1.txt and LGPL-3.0.txt.
+
+LuxPresenter loads the library dynamically (LoadLibrary) and does not modify it. You can replace
+libmpv-2.dll with another libmpv build of the same API version. Complete corresponding source is available
+from the project and builder links above.
+
+Runtime requirement: libmpv-2.dll imports the Vulkan loader (vulkan-1.dll), which ships with current
+graphics drivers and Windows. If libmpv-2.dll or the loader is missing, LuxPresenter still starts and
+video backgrounds are simply not played.

@@ -1,0 +1,41 @@
+# Build outputs
+/build/
+/build-*/
+/Portable/
+/Release/
+/out/
+CMakeUserPresets.json
+
+# C++ Object and linker files
+*.obj
+*.ilk
+*.pdb
+*.exp
+*.lib
+*.idb
+*.tmp
+*.log
+test_out.txt
+display_log.txt
+desktop.ini
+Thumbs.db
+
+# Visual Studio & IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Third-party heavy binaries & downloads
+/third_party/downloads/
+/third_party/mpv-lgpl/
+/third_party/pdfium/
+/third_party/webview2/
+/third_party/libreoffice/
+/third_party/webview2-runtime/
+
+# Runtime caches
+PresentationCache/
+WebView2Data/
+Thumbnails/
