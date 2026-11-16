@@ -80,7 +80,6 @@ add_library(luxui STATIC
     src/Views/Components/OnlineBrowserView.cpp
     src/Views/Components/LibraryView.cpp
     src/Views/Components/SlideCanvas.cpp
-    src/Views/Components/LiveAlertBannerWidget.cpp
     src/Views/Components/TextRender.cpp
     src/Views/Components/SlidePaneView.cpp
     src/Views/Components/ProportionalSplitter.cpp

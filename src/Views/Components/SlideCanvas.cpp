@@ -1,5 +1,6 @@
 #include "Views/Components/SlideCanvas.h"
 
+#include "Services/AlertService.h"
 #include "Services/BackgroundThumbnails.h"
 #include "Services/BackgroundUtil.h"
 #include "Services/LyricsFormatter.h"
@@ -7,6 +8,8 @@
 #include "Views/Components/TextRender.h"
 #include "Views/UiUtil.h"
 
+#include <QDateTime>
+#include <QFontMetricsF>
 #include <QPainter>
 #include <QPixmap>
 
@@ -40,6 +43,35 @@ SlideCanvas::SlideCanvas(QWidget* parent) : QWidget(parent)
         if (path == m_background)
             update();
     });
+
+    connect(&m_alertTimer, &QTimer::timeout, this, QOverload<>::of(&QWidget::update));
+    connect(&AlertService::instance(), &AlertService::alertStateChanged, this, [this] {
+        if (m_isLive && AlertService::instance().isAlertVisible()) {
+            if (!m_alertTimer.isActive()) {
+                m_alertStartTime = QDateTime::currentMSecsSinceEpoch();
+                m_alertTimer.start(16);
+            }
+        } else {
+            m_alertTimer.stop();
+            m_alertStartTime = 0;
+        }
+        update();
+    });
+}
+
+void SlideCanvas::setLive(bool live)
+{
+    m_isLive = live;
+    if (m_isLive && AlertService::instance().isAlertVisible()) {
+        if (!m_alertTimer.isActive()) {
+            m_alertStartTime = QDateTime::currentMSecsSinceEpoch();
+            m_alertTimer.start(16);
+        }
+    } else {
+        m_alertTimer.stop();
+        m_alertStartTime = 0;
+    }
+    update();
 }
 
 void SlideCanvas::setSlide(const Slide& slide)
@@ -205,6 +237,46 @@ void SlideCanvas::paintEvent(QPaintEvent*)
             const QRectF lr(area.left() + (lp.h == Qt::AlignLeft ? indent : 0), lp.top ? area.top() : area.bottom() - labelH,
                             area.width() - indent, labelH);
             drawShadowedLabel(&p, lr, int(lp.h) | (lp.top ? Qt::AlignTop : Qt::AlignBottom), displayText(m_slide.label), labelPx);
+        }
+    }
+    if (m_isLive && AlertService::instance().isAlertVisible()) {
+        const QString alertText = AlertService::instance().currentActiveMessage().text;
+        if (!alertText.isEmpty()) {
+            const qreal bannerH = 25.3;
+            const QRectF bannerRect(0, kH - bannerH, kW, bannerH);
+            p.save();
+            p.setOpacity(1.0);
+            p.fillRect(bannerRect, QColor(0xFF, 0x00, 0x00));
+            p.setClipRect(bannerRect);
+
+            QFont f = tahoma(10, true);
+            f.setPixelSize(15);
+            p.setFont(f);
+            QFontMetricsF fm(f);
+            const qreal textW = fm.horizontalAdvance(alertText);
+            const qreal totalDist = kW + textW;
+            const qreal speed = 100.0;
+            const qreal durationSec = qMax(3.0, totalDist / speed);
+
+            const qint64 now = QDateTime::currentMSecsSinceEpoch();
+            if (m_alertStartTime <= 0)
+                m_alertStartTime = now;
+
+            qreal elapsed = (now - m_alertStartTime) / 1000.0;
+            if (elapsed >= durationSec) {
+                m_alertStartTime = now;
+                elapsed = 0;
+            }
+
+            const qreal x = kW - (elapsed / durationSec) * totalDist;
+            const qreal y = bannerRect.top() + (bannerH - fm.height()) / 2.0 + fm.ascent();
+
+            p.setPen(QColor(0, 0, 0, 220));
+            p.drawText(QPointF(x + 1.5, y + 1.5), alertText);
+
+            p.setPen(Qt::white);
+            p.drawText(QPointF(x, y), alertText);
+            p.restore();
         }
     }
     if (m_black)

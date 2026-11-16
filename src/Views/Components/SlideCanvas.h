@@ -3,6 +3,7 @@
 #include "Models/AppSettings.h"
 #include "Models/Slide.h"
 
+#include <QTimer>
 #include <QWidget>
 
 namespace Lux {
@@ -25,6 +26,8 @@ public:
     // Live pane mirrors of the projector toggles: Black covers the slide, Clear hides its text.
     void setBlack(bool on) { m_black = on; update(); }
     void setTextCleared(bool on) { m_cleared = on; update(); }
+    void setLive(bool live);
+    bool isLive() const { return m_isLive; }
     bool isBlack() const { return m_black; }
     bool isTextCleared() const { return m_cleared; }
     bool hasSlide() const { return m_hasSlide; }
@@ -46,6 +49,9 @@ private:
     bool m_hasSlide = false;
     bool m_black = false;
     bool m_cleared = false;
+    bool m_isLive = false;
+    QTimer m_alertTimer;
+    qint64 m_alertStartTime = 0;
     QString m_background = QStringLiteral("#001833"); // MainViewModel.ActiveGlobalBackground default
     AppSettings m_settings;
     mutable QString m_fsKey;      // memo of fullScaleFontSize (the search lays the text out 7 times)
