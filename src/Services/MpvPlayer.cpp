@@ -79,9 +79,9 @@ bool MpvPlayer::load(const QString& path, Role role, bool loop, bool startPaused
         return false;
     if (role == Role::Background) {
         setProp("mute", "yes");
-        // Fill the whole output without distorting: keep the aspect ratio and crop the overflow.
+        // Fit the output without distorting or cropping: keep the aspect ratio with letterboxing (panscan 0.0)
         setProp("keepaspect", "yes");
-        setProp("panscan", "1.0");
+        setProp("panscan", "0.0");
         setProp("loop-file", "inf");
     } else {
         setProp("mute", "no");

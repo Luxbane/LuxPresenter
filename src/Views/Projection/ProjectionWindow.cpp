@@ -302,11 +302,14 @@ void ProjectionWindow::paintScene(QPainter* p, const QRectF& target, qint64 t)
         if (pm.isNull())
             continue;
         p->setOpacity(o);
-        // UniformToFill: cover the whole target, cropping the overflow, never distorting the image
-        const qreal k = std::max(fill.width() / pm.width(), fill.height() / pm.height());
-        const QRectF src((pm.width() - fill.width() / k) / 2, (pm.height() - fill.height() / k) / 2,
-                         fill.width() / k, fill.height() / k);
-        p->drawPixmap(fill, pm, src);
+        // Fit: letterbox / pillarbox inside target without cropping, keeping aspect ratio
+        const qreal k = std::min(fill.width() / pm.width(), fill.height() / pm.height());
+        const qreal fitW = pm.width() * k;
+        const qreal fitH = pm.height() * k;
+        const QRectF dest(fill.left() + (fill.width() - fitW) / 2.0,
+                          fill.top() + (fill.height() - fitH) / 2.0,
+                          fitW, fitH);
+        p->drawPixmap(dest, pm, pm.rect());
     }
     if (m_composer->presentationActive()) {
         // The page is rendered for this output's pixel size and centred without scaling (aspect ratio kept).

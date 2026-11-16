@@ -669,7 +669,7 @@ private slots:
         }
     }
 
-    void backgroundImageCoversTargetWithoutDistortion()
+    void backgroundImageFitsTargetWithoutDistortion()
     {
         QTemporaryDir dir;
         QImage src(400, 400, QImage::Format_RGB32);
@@ -699,7 +699,7 @@ private slots:
                     if (qRed(img.pixel(x, y)) > 200) {
                         x0 = qMin(x0, x); x1 = qMax(x1, x); y0 = qMin(y0, y); y1 = qMax(y1, y);
                     }
-            const double k2 = qMax(sz.width() / 400.0, sz.height() / 400.0);   // cover scale
+            const double k2 = qMin(sz.width() / 400.0, sz.height() / 400.0);   // fit scale
             const int w = x1 - x0 + 1, h = y1 - y0 + 1;
             QVERIFY2(qAbs(w - h) <= 3, qPrintable(QStringLiteral("marker distorted %1x%2 on %3x%4").arg(w).arg(h).arg(sz.width()).arg(sz.height())));
             QVERIFY2(qAbs(w - 100 * k2) <= 4, qPrintable(QString::number(w)));

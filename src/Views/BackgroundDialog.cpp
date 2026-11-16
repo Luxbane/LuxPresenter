@@ -319,7 +319,7 @@ QIcon BackgroundDialog::iconFor(const BackgroundItem& b) const
     QPixmap pm(kThumb);
     pm.fill(Qt::black);
     QPainter p(&pm);
-    const qreal k = std::max(qreal(kThumb.width()) / img.width(), qreal(kThumb.height()) / img.height());
+    const qreal k = std::min(qreal(kThumb.width()) / img.width(), qreal(kThumb.height()) / img.height());
     const QSizeF s(img.width() * k, img.height() * k);
     p.setRenderHint(QPainter::SmoothPixmapTransform);
     p.drawImage(QRectF((kThumb.width() - s.width()) / 2, (kThumb.height() - s.height()) / 2, s.width(), s.height()), img);

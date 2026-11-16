@@ -403,7 +403,7 @@ private slots:
         QCOMPARE(decks.player(0)->property("mute"), QStringLiteral("yes"));       // backgrounds are silent
         QCOMPARE(decks.player(0)->property("loop-file"), QStringLiteral("inf"));  // and loop
         QCOMPARE(decks.player(0)->property("keepaspect"), QStringLiteral("yes")); // never distorted ...
-        QCOMPARE(decks.player(0)->property("panscan").toDouble(), 1.0);           // ... and cropped to fill the output
+        QCOMPARE(decks.player(0)->property("panscan").toDouble(), 0.0);           // ... and fitted (keep aspect, no crop)
         const double p0 = decks.player(0)->position();
         QTest::qWait(600);
         QVERIFY2(decks.player(0)->position() > p0, "deck 0 is playing");

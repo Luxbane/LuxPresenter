@@ -160,10 +160,12 @@ void SlideCanvas::paintEvent(QPaintEvent*)
         const bool video = Backgrounds::isVideoPath(bg);
         const QImage img = BackgroundThumbnails::instance().image(bg, qMax(640, int(width() * devicePixelRatioF())));
         if (!img.isNull()) {
-            // UniformToFill: cover the slide, cropping the overflow
-            const qreal k = std::max(kW / img.width(), kH / img.height());
-            const QRectF src((img.width() - kW / k) / 2, (img.height() - kH / k) / 2, kW / k, kH / k);
-            p.drawImage(QRectF(0, 0, kW, kH), img, src);
+            // Fit: letterbox / pillarbox without cropping, keeping aspect ratio
+            const qreal k = std::min(kW / img.width(), kH / img.height());
+            const qreal fitW = img.width() * k;
+            const qreal fitH = img.height() * k;
+            const QRectF dest((kW - fitW) / 2.0, (kH - fitH) / 2.0, fitW, fitH);
+            p.drawImage(dest, img, img.rect());
         }
         if (video) {
             p.setFont(tahoma(11, true));
