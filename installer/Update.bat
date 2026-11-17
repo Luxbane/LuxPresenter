@@ -81,10 +81,28 @@ if exist "%~dp0Data\bibles.json" (
 
 :: Copy browser extension updates if included in patch
 if exist "%~dp0Extensions\uBlockOrigin" (
-    echo [4/4] Updating browser ad-blocker extensions...
+    echo [4/4] Updating browser ad-blocker extensions and cleaning unused components...
     robocopy "%~dp0Extensions\uBlockOrigin" "!TARGET_DIR!\Extensions\uBlockOrigin" /E /NFL /NDL /NJH /NJS /nc /ns /np >nul 2>&1
 ) else (
-    echo [4/4] Finalizing patch...
+    echo [4/4] Finalizing patch and cleaning unused components...
+)
+
+:: Clean up unused Edge/Copilot bloat in Engines\WebView2 if present
+if exist "!TARGET_DIR!\Engines\WebView2" (
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\Copilot*" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\*copilot*" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\notification_helper.exe" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\platform_experiences_helper.exe" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\telclient.dll" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\oneds.dll" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\oneauth.dll" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\onnxruntime.dll" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\mip_core_gn.dll" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\dual_engine_adapter_x64.dll" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\learning_tools.dll" >nul 2>&1
+    del /f /q "!TARGET_DIR!\Engines\WebView2\*\Locales\*copilot*" >nul 2>&1
+    rd /s /q "!TARGET_DIR!\Engines\WebView2\*\edge_feedback" >nul 2>&1
+    rd /s /q "!TARGET_DIR!\Engines\WebView2\*\Installer" >nul 2>&1
 )
 
 echo.

@@ -41,7 +41,7 @@ Name: "{userdocs}\{#MyAppName}Qt6\Database"
 Source: "{#SourceDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\resources\app.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\Data\settings.json"; DestDir: "{app}\Data"; Flags: onlyifdoesntexist
-Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,display_log.txt,*.tmp,*.log,Data\settings.json,Data\PresentationCache\*,Data\WebView2Data\*,Data\Thumbnails\*,Database\songs.json"
+Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,display_log.txt,*.tmp,*.log,Data\settings.json,Data\PresentationCache\*,Data\WebView2Data\*,Data\Thumbnails\*,Database\songs.json,*copilot*,edge_feedback\*"
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\app.ico"
