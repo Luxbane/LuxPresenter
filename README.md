@@ -6,7 +6,10 @@
 [![itch.io](https://img.shields.io/badge/itch.io-LuxPresenter-FA5C5C.svg)](https://luxbane.itch.io/luxpresenter)
 [![GitHub](https://img.shields.io/badge/GitHub-Luxbane%2FLuxPresenter-181717.svg)](https://github.com/Luxbane/LuxPresenter)
 
-**LuxPresenter** is a high-performance, modern church presentation and worship projection software engineered in **C++20** and **Qt 6**. Designed for churches, ministries, conferences, and live events, LuxPresenter delivers rock-solid stability, zero-latency switching, and hardware-accelerated dual-display output.
+> *"We really got a free, high-performance church presenter app before GTA 6."* 🎮🕊️  
+> *(Dropping right before November 19!)*
+
+**LuxPresenter** is a high-performance, modern church presentation and worship projection software engineered in **C++20** and **Qt 6**, built and pair-programmed with **Claude Sonnet 5.5** and **Gemini 3.8 Flash**. Designed for churches, ministries, conferences, and live events, LuxPresenter delivers rock-solid stability, zero-latency switching, and hardware-accelerated dual-display output.
 
 * **GitHub Repository:** [https://github.com/Luxbane/LuxPresenter](https://github.com/Luxbane/LuxPresenter)
 * **itch.io Page:** [https://luxbane.itch.io/luxpresenter](https://luxbane.itch.io/luxpresenter)
@@ -126,7 +129,7 @@ For full third-party notices and complete license texts, see [THIRD_PARTY_LICENS
 
 ## License & Author
 
-LuxPresenter is created and maintained by **Luxbane**.
+LuxPresenter is created and maintained by **Luxbane**, co-developed with **Claude Sonnet 5.5** and **Gemini 3.8 Flash**.
 
 * **License:** Licensed under the [GNU General Public License v3.0](LICENSE) (GPL-3.0). Free and open-source forever.
 * **GitHub:** [@Luxbane](https://github.com/Luxbane)
