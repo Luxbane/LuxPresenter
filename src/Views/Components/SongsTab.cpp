@@ -16,6 +16,7 @@
 #include <QMenu>
 #include <QMimeData>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -234,8 +235,146 @@ SongsTab::SongsTab(DataService& data, QWidget* parent) : QWidget(parent), m_data
     reload();
 }
 
-QString SongsTab::titleQuery() const { return m_titleSearch->text(); }
-QString SongsTab::lyricsQuery() const { return m_lyricsSearch->text(); }
+bool SongsTab::findBestCandidate(const QString& prefix, bool isLyrics, CandidateMatch& out) const
+{
+    if (prefix.isEmpty())
+        return false;
+
+    const QList<Song> allSongs = m_data.songs();
+    if (allSongs.isEmpty())
+        return false;
+
+    const bool favOnly = m_favorites->isChecked();
+
+    if (!isLyrics) {
+        QList<CandidateMatch> candidates;
+        for (const Song& s : allSongs) {
+            if (favOnly && !s.isFavorite)
+                continue;
+            const QString title = s.title.trimmed();
+            if (title.startsWith(prefix, Qt::CaseInsensitive)) {
+                CandidateMatch m;
+                m.songId = s.id;
+                m.songTitle = title;
+                m.matchedPhrase = title;
+                m.suffix = title.mid(prefix.length());
+                m.isLineStart = true;
+                candidates.append(m);
+            }
+        }
+        if (candidates.isEmpty())
+            return false;
+
+        std::stable_sort(candidates.begin(), candidates.end(), [](const CandidateMatch& a, const CandidateMatch& b) {
+            return QString::localeAwareCompare(a.songTitle.toLower(), b.songTitle.toLower()) < 0;
+        });
+
+        out = candidates.first();
+        return true;
+    }
+
+    // Lyrics search
+    QList<CandidateMatch> candidates;
+    static const QRegularExpression lineSplitRx(QStringLiteral(R"([\r\n]+)"));
+    static const QRegularExpression leadingNumRx(QStringLiteral(R"(^\d+[\.\)\s\-]+)"));
+
+    for (const Song& s : allSongs) {
+        if (favOnly && !s.isFavorite)
+            continue;
+        const QStringList lines = s.lyricsRaw.split(lineSplitRx, Qt::SkipEmptyParts);
+        for (const QString& rawLine : lines) {
+            QString line = rawLine.trimmed();
+            if (line.isEmpty())
+                continue;
+            if ((line.startsWith(QLatin1Char('[')) && line.endsWith(QLatin1Char(']'))) ||
+                (line.endsWith(QLatin1Char(':')) && line.length() < 30))
+                continue;
+
+            QString cleanLine = line;
+            cleanLine.remove(leadingNumRx);
+            cleanLine = cleanLine.trimmed();
+            if (cleanLine.isEmpty())
+                continue;
+
+            if (cleanLine.startsWith(prefix, Qt::CaseInsensitive)) {
+                CandidateMatch m;
+                m.songId = s.id;
+                m.songTitle = s.title;
+                m.matchedPhrase = cleanLine;
+                m.suffix = cleanLine.mid(prefix.length());
+                m.isLineStart = true;
+                candidates.append(m);
+            } else {
+                int idx = 0;
+                while ((idx = cleanLine.indexOf(prefix, idx, Qt::CaseInsensitive)) != -1) {
+                    if (idx > 0 && (cleanLine.at(idx - 1).isSpace() || cleanLine.at(idx - 1) == QLatin1Char(',') || cleanLine.at(idx - 1) == QLatin1Char('.'))) {
+                        QString phrase = cleanLine.mid(idx).trimmed();
+                        CandidateMatch m;
+                        m.songId = s.id;
+                        m.songTitle = s.title;
+                        m.matchedPhrase = phrase;
+                        m.suffix = phrase.mid(prefix.length());
+                        m.isLineStart = false;
+                        candidates.append(m);
+                        break;
+                    }
+                    idx += prefix.length();
+                }
+            }
+        }
+    }
+
+    if (candidates.isEmpty()) {
+        for (const Song& s : allSongs) {
+            if (favOnly && !s.isFavorite)
+                continue;
+            const QString title = s.title.trimmed();
+            if (title.startsWith(prefix, Qt::CaseInsensitive)) {
+                CandidateMatch m;
+                m.songId = s.id;
+                m.songTitle = s.title;
+                m.matchedPhrase = title;
+                m.suffix = title.mid(prefix.length());
+                m.isLineStart = false;
+                candidates.append(m);
+            }
+        }
+    }
+
+    if (candidates.isEmpty())
+        return false;
+
+    std::stable_sort(candidates.begin(), candidates.end(), [](const CandidateMatch& a, const CandidateMatch& b) {
+        if (a.isLineStart != b.isLineStart)
+            return a.isLineStart > b.isLineStart;
+        const int cmp = QString::localeAwareCompare(a.matchedPhrase.toLower(), b.matchedPhrase.toLower());
+        if (cmp != 0)
+            return cmp < 0;
+        return QString::localeAwareCompare(a.songTitle.toLower(), b.songTitle.toLower()) < 0;
+    });
+
+    out = candidates.first();
+    return true;
+}
+
+bool SongsTab::hasSelectedGhost(const QLineEdit* edit)
+{
+    if (!edit || !edit->hasSelectedText())
+        return false;
+    const int start = edit->selectionStart();
+    const int len = edit->selectedText().length();
+    return (start == edit->cursorPosition() && start + len == edit->text().length());
+}
+
+QString SongsTab::titleQuery() const
+{
+    return hasSelectedGhost(m_titleSearch) ? m_titleSearch->text().left(m_titleSearch->cursorPosition()) : m_titleSearch->text();
+}
+
+QString SongsTab::lyricsQuery() const
+{
+    return hasSelectedGhost(m_lyricsSearch) ? m_lyricsSearch->text().left(m_lyricsSearch->cursorPosition()) : m_lyricsSearch->text();
+}
 bool SongsTab::favoritesOnly() const { return m_favorites->isChecked(); }
 
 void SongsTab::setFavoritesOnly(bool on) { m_favorites->setChecked(on); }
@@ -314,11 +453,13 @@ void SongsTab::setSelected(const QString& id, bool forcePreview)
 void SongsTab::applyFilter(const QString& targetSongId)
 {
     const QString target = targetSongId.isEmpty() ? m_selectedId : targetSongId;
-    const bool hasQuery = !m_titleSearch->text().trimmed().isEmpty() || !m_lyricsSearch->text().trimmed().isEmpty();
+    const QString tQuery = hasSelectedGhost(m_titleSearch) ? m_titleSearch->text().left(m_titleSearch->cursorPosition()) : m_titleSearch->text();
+    const QString lQuery = hasSelectedGhost(m_lyricsSearch) ? m_lyricsSearch->text().left(m_lyricsSearch->cursorPosition()) : m_lyricsSearch->text();
+    const bool hasQuery = !tQuery.trimmed().isEmpty() || !lQuery.trimmed().isEmpty();
     // A cleared lyrics search re-previews the selected song so that the matching stanza it had highlighted does not linger.
-    const bool lyricsQueryCleared = m_hadLyricsQuery && m_lyricsSearch->text().trimmed().isEmpty();
-    m_hadLyricsQuery = !m_lyricsSearch->text().trimmed().isEmpty();
-    m_filtered = m_index.filter(m_titleSearch->text(), m_lyricsSearch->text(), m_favorites->isChecked());
+    const bool lyricsQueryCleared = m_hadLyricsQuery && lQuery.trimmed().isEmpty();
+    m_hadLyricsQuery = !lQuery.trimmed().isEmpty();
+    m_filtered = m_index.filter(tQuery, lQuery, m_favorites->isChecked());
     fillList();
 
     if (!target.isEmpty()) {
@@ -357,7 +498,18 @@ bool SongsTab::paneActive() const { return m_list->property("paneActive").toBool
 
 bool SongsTab::eventFilter(QObject* obj, QEvent* e)
 {
-    if (e->type() == QEvent::KeyPress) {
+    if (e->type() == QEvent::FocusOut) {
+        if (obj == m_titleSearch || obj == m_lyricsSearch) {
+            auto* edit = static_cast<QLineEdit*>(obj);
+            if (hasSelectedGhost(edit)) {
+                const int cur = edit->cursorPosition();
+                const QString base = edit->text().left(cur);
+                QSignalBlocker b(edit);
+                edit->setText(base);
+                edit->setCursorPosition(base.length());
+            }
+        }
+    } else if (e->type() == QEvent::KeyPress) {
         auto* ke = static_cast<QKeyEvent*>(e);
         const int key = ke->key();
         if (obj == m_list) {
@@ -386,12 +538,65 @@ bool SongsTab::eventFilter(QObject* obj, QEvent* e)
                 });
             }
         } else if (obj == m_titleSearch || obj == m_lyricsSearch) {
-            if (key == Qt::Key_Return || key == Qt::Key_Enter) {
+            auto* edit = static_cast<QLineEdit*>(obj);
+            const bool isLyrics = (obj == m_lyricsSearch);
+            if (key == Qt::Key_Backspace) {
+                if (hasSelectedGhost(edit)) {
+                    m_isDeleting = true;
+                    const int cur = edit->cursorPosition();
+                    const QString base = edit->text().left(cur);
+                    const QString newText = base.left(std::max(0, cur - 1));
+                    {
+                        QSignalBlocker b(edit);
+                        edit->setText(newText);
+                        edit->setCursorPosition(newText.length());
+                    }
+                    m_debounce->start();
+                    return true;
+                }
+                m_isDeleting = true;
+            } else if (key == Qt::Key_Delete) {
+                if (hasSelectedGhost(edit)) {
+                    m_isDeleting = true;
+                    const int cur = edit->cursorPosition();
+                    const QString base = edit->text().left(cur);
+                    {
+                        QSignalBlocker b(edit);
+                        edit->setText(base);
+                        edit->setCursorPosition(cur);
+                    }
+                    m_debounce->start();
+                    return true;
+                }
+                m_isDeleting = true;
+            } else if (key == Qt::Key_Tab || (key == Qt::Key_Right && edit->cursorPosition() == edit->selectionStart())) {
+                if (hasSelectedGhost(edit)) {
+                    edit->deselect();
+                    edit->setCursorPosition(edit->text().length());
+                    applyFilterImmediate();
+                    return true;
+                }
+            } else if (key == Qt::Key_Return || key == Qt::Key_Enter) {
+                if (hasSelectedGhost(edit)) {
+                    edit->deselect();
+                    edit->setCursorPosition(edit->text().length());
+                    applyFilterImmediate();
+                    if (!m_selectedId.isEmpty()) {
+                        emit goLiveRequested(m_selectedId);
+                    }
+                    return true;
+                }
                 applyFilterImmediate();
                 m_list->setFocus();
                 return true;
-            }
-            if (key == Qt::Key_Down || key == Qt::Key_Up) {
+            } else if (key == Qt::Key_Down || key == Qt::Key_Up) {
+                if (hasSelectedGhost(edit)) {
+                    const int cur = edit->cursorPosition();
+                    const QString base = edit->text().left(cur);
+                    QSignalBlocker b(edit);
+                    edit->setText(base);
+                    edit->setCursorPosition(base.length());
+                }
                 m_list->setFocus();
                 const int row = m_list->indexOfTopLevelItem(m_list->currentItem());
                 const int n = m_list->topLevelItemCount();
@@ -401,11 +606,53 @@ bool SongsTab::eventFilter(QObject* obj, QEvent* e)
                     userSelect(currentListSongId());
                 }
                 return true;
-            }
-            if (key == Qt::Key_Escape) {
+            } else if (key == Qt::Key_Escape) {
                 { QSignalBlocker b1(m_titleSearch), b2(m_lyricsSearch); m_titleSearch->clear(); m_lyricsSearch->clear(); }
                 applyFilterImmediate();
                 return true;
+            } else if (!ke->text().isEmpty() && !ke->modifiers().testFlag(Qt::ControlModifier) && !ke->modifiers().testFlag(Qt::AltModifier)) {
+                // Input Guard & Constrained Autocomplete:
+                const QString input = ke->text();
+                // Determine candidate typed prefix
+                QString candidateTyped;
+                if (hasSelectedGhost(edit)) {
+                    candidateTyped = edit->text().left(edit->cursorPosition()) + input;
+                } else if (edit->hasSelectedText()) {
+                    candidateTyped = edit->text().left(edit->selectionStart()) + input + edit->text().mid(edit->selectionStart() + edit->selectedText().length());
+                } else {
+                    candidateTyped = edit->text().left(edit->cursorPosition()) + input + edit->text().mid(edit->cursorPosition());
+                }
+
+                CandidateMatch best;
+                if (findBestCandidate(candidateTyped, isLyrics, best)) {
+                    // Accepted! Mutually exclusive clear of the other search box
+                    QLineEdit* other = isLyrics ? m_titleSearch : m_lyricsSearch;
+                    if (!other->text().isEmpty()) {
+                        QSignalBlocker b(other);
+                        other->clear();
+                    }
+                    m_isDeleting = false;
+                    const int typedLen = candidateTyped.length();
+                    const int suffixLen = best.suffix.length();
+                    const int fullLen = typedLen + suffixLen;
+                    {
+                        QSignalBlocker b(edit);
+                        edit->setText(candidateTyped + best.suffix);
+                        if (suffixLen > 0)
+                            edit->setSelection(fullLen, -suffixLen);
+                        else
+                            edit->setCursorPosition(fullLen);
+                    }
+                    m_debounce->stop();
+                    applyFilter(best.songId);
+                    setSelected(best.songId, true);
+                    return true;
+                } else {
+                    // Rejected! Input Guard blocks typos & invalid continuation
+                    return true;
+                }
+            } else {
+                m_isDeleting = false;
             }
         }
     }

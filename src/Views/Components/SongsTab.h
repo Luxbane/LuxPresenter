@@ -91,6 +91,15 @@ private:
     void setSelected(const QString& id, bool forcePreview);
     void fillList();
     QString currentListSongId() const;
+    struct CandidateMatch {
+        QString songId;
+        QString songTitle;
+        QString matchedPhrase;
+        QString suffix;
+        bool isLineStart = false;
+    };
+    bool findBestCandidate(const QString& prefix, bool isLyrics, CandidateMatch& out) const;
+    static bool hasSelectedGhost(const QLineEdit* edit);
 
     DataService& m_data;
     SongSearch m_index;
@@ -109,6 +118,7 @@ private:
     QMenu* m_contextMenu;
     QAction *m_aAdd, *m_aGoLive, *m_aEdit, *m_aDelete;
     bool m_hadLyricsQuery = false;
+    bool m_isDeleting = false;
 };
 
 } // namespace Lux
