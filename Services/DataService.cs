@@ -26,6 +26,7 @@ public class DataService : IDataService
     private readonly Dictionary<(string version, int bookId, int chapter), List<BibleVerse>> _chapterLookup = new();
     private readonly Dictionary<string, int> _bookNameToId = new(StringComparer.OrdinalIgnoreCase);
     private AppSettings _settings = new();
+    private readonly object _lock = new();
 
     private static readonly (int Id, string Eng, string Indo, string ShortEng, string ShortIndo, int Chapters, bool IsOT)[] AllBookMetadata = new[]
     {
@@ -289,14 +290,26 @@ public class DataService : IDataService
             try
             {
                 var json = File.ReadAllText(_mediaFile);
-                var loaded = JsonSerializer.Deserialize<List<MediaItem>>(json) ?? new();
-                _media = loaded.Where(m => !string.IsNullOrWhiteSpace(m.FilePath) && File.Exists(m.FilePath)).ToList();
-                if (_media.Count != loaded.Count)
+                if (string.IsNullOrWhiteSpace(json))
                 {
+                    _media = new();
                     SaveMediaToFile();
                 }
+                else
+                {
+                    var loaded = JsonSerializer.Deserialize<List<MediaItem>>(json) ?? new();
+                    _media = loaded.Where(m => !string.IsNullOrWhiteSpace(m.FilePath) && File.Exists(m.FilePath)).ToList();
+                    if (_media.Count != loaded.Count)
+                    {
+                        SaveMediaToFile();
+                    }
+                }
             }
-            catch { _media = GetSeedMedia(); }
+            catch 
+            { 
+                _media = GetSeedMedia(); 
+                SaveMediaToFile();
+            }
         }
         else
         {
@@ -635,8 +648,36 @@ public class DataService : IDataService
 
     public void DeleteMediaItem(string mediaId)
     {
-        _media.RemoveAll(m => m.Id == mediaId);
-        SaveMediaToFile();
+        lock (_lock)
+        {
+            var item = _media.FirstOrDefault(m => m.Id == mediaId);
+            if (item != null && !string.IsNullOrWhiteSpace(item.FilePath))
+            {
+                ThumbnailService.DeleteThumbnail(item.FilePath);
+            }
+            _media.RemoveAll(m => m.Id == mediaId);
+            SaveMediaToFile();
+        }
+    }
+
+    public void CleanupOrphanedMedia()
+    {
+        lock (_lock)
+        {
+            int mediaBefore = _media.Count;
+            _media.RemoveAll(m => string.IsNullOrWhiteSpace(m.FilePath) || !File.Exists(m.FilePath));
+            if (_media.Count != mediaBefore || !File.Exists(_mediaFile))
+            {
+                SaveMediaToFile();
+            }
+
+            int bgBefore = _backgrounds.Count;
+            _backgrounds.RemoveAll(b => !string.IsNullOrWhiteSpace(b.FilePath) && !b.FilePath.StartsWith("#") && !File.Exists(b.FilePath));
+            if (_backgrounds.Count != bgBefore || !File.Exists(_backgroundsFile))
+            {
+                SaveBackgroundsToFile();
+            }
+        }
     }
 
     public List<PresentationDocItem> GetPresentationDocs() => _presentationDocs.OrderByDescending(p => p.DateAdded).ToList();

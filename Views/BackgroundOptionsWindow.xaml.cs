@@ -62,6 +62,17 @@ public partial class BackgroundOptionsWindow : Window
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
         };
+
+        PreviewKeyDown += OnWindowPreviewKeyDown;
+    }
+
+    private void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Delete or Key.Back && _vm.SelectedEntry != null)
+        {
+            _vm.DeleteSelected();
+            e.Handled = true;
+        }
     }
 
     private void OnThumbnailClick(object sender, MouseButtonEventArgs e)
@@ -112,6 +123,15 @@ public partial class BackgroundOptionsWindow : Window
     {
         // Commit background changes back to data service (backgrounds.json)
         _dataService.SaveBackgrounds(_vm.BackgroundItems.Select(b => b.BackgroundItem));
+
+        try
+        {
+            var activeMedia = _dataService.GetMediaItems().Select(m => m.FilePath);
+            var activeBackgrounds = _vm.BackgroundItems.Select(b => b.FilePath);
+            ThumbnailService.CleanupOrphanedThumbnails(activeMedia.Concat(activeBackgrounds));
+        }
+        catch { }
+
         Changed = true;
         DialogResult = true;
         Close();
@@ -208,6 +228,11 @@ public class BackgroundWindowViewModel : ViewModelBase
     public void DeleteSelected()
     {
         if (_selected == null) return;
+        var filePath = _selected.FilePath;
+        if (!string.IsNullOrWhiteSpace(filePath))
+        {
+            ThumbnailService.DeleteThumbnail(filePath);
+        }
         int idx = BackgroundItems.IndexOf(_selected);
         BackgroundItems.Remove(_selected);
         OnPropertyChanged(nameof(HasItems));

@@ -101,11 +101,66 @@ public static class ThumbnailService
         }
     }
 
-    private static string GetCacheFilePath(string videoPath)
+    public static string GetCacheFilePath(string videoPath)
     {
         var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(videoPath.ToLowerInvariant()));
         var hash = Convert.ToHexString(hashBytes).Substring(0, 16);
         return Path.Combine(CacheDir, $"{hash}.jpg");
+    }
+
+    public static void DeleteThumbnail(string videoOrMediaPath)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(videoOrMediaPath)) return;
+            var path = GetCacheFilePath(videoOrMediaPath);
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+            _memoryCache.TryRemove(videoOrMediaPath, out _);
+        }
+        catch { }
+    }
+
+    public static void CleanupOrphanedThumbnails(IEnumerable<string> activePaths)
+    {
+        try
+        {
+            var validFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var path in activePaths)
+            {
+                if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                {
+                    var thumbFile = Path.GetFileName(GetCacheFilePath(path));
+                    validFileNames.Add(thumbFile);
+                }
+            }
+
+            string[] candidateDirs = {
+                AppPaths.ThumbnailCacheDirectory,
+                Path.Combine(AppPaths.DataDirectory, "Thumbnail")
+            };
+
+            foreach (var dir in candidateDirs)
+            {
+                if (!Directory.Exists(dir)) continue;
+
+                foreach (var file in Directory.GetFiles(dir, "*.*"))
+                {
+                    string fileName = Path.GetFileName(file);
+                    if (!validFileNames.Contains(fileName))
+                    {
+                        try
+                        {
+                            File.Delete(file);
+                        }
+                        catch { }
+                    }
+                }
+            }
+        }
+        catch { }
     }
 
     #region Windows Shell Thumbnail API

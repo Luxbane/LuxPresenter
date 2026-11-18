@@ -90,13 +90,8 @@ public partial class MainWindow : Window
 
         UpdateThemeUI(initialSettings.IsDarkMode);
 
-        // Clean up orphaned presentation caches on startup
-        try
-        {
-            var activeDocs = _dataService.GetPresentationDocs().Select(d => d.FilePath);
-            LuxPresenter.Services.Presentation.PresentationEngineService.CleanupOrphanedCaches(activeDocs);
-        }
-        catch { }
+        // Clean up orphaned presentation caches, media, and thumbnails on startup
+        CleanupOrphanedData();
 
 
 
@@ -941,13 +936,8 @@ public partial class MainWindow : Window
         }
         catch { }
 
-        // Clean up orphaned presentation caches on shutdown
-        try
-        {
-            var activeDocs = _dataService.GetPresentationDocs().Select(d => d.FilePath);
-            LuxPresenter.Services.Presentation.PresentationEngineService.CleanupOrphanedCaches(activeDocs);
-        }
-        catch { }
+        // Clean up orphaned presentation caches, media, and thumbnails on shutdown
+        CleanupOrphanedData();
 
         if (!_isShuttingDown)
         {
@@ -978,6 +968,30 @@ public partial class MainWindow : Window
     }
 
 
+
+    private void CleanupOrphanedData()
+    {
+        try
+        {
+            // 1. Presentation caches
+            var activeDocs = _dataService.GetPresentationDocs().Select(d => d.FilePath);
+            LuxPresenter.Services.Presentation.PresentationEngineService.CleanupOrphanedCaches(activeDocs);
+
+            // 2. Media and Backgrounds missing from disk
+            _dataService.CleanupOrphanedMedia();
+
+            // 3. Thumbnails cache cleanup (delete any thumbnail not belonging to active media/backgrounds)
+            var activeMedia = _dataService.GetMediaItems().Select(m => m.FilePath);
+            var activeBackgrounds = _dataService.GetBackgrounds().Select(b => b.FilePath);
+            var defaultBg = _dataService.GetSettings().LastUsedBackground;
+            var allActivePaths = activeMedia.Concat(activeBackgrounds);
+            if (!string.IsNullOrWhiteSpace(defaultBg))
+                allActivePaths = allActivePaths.Append(defaultBg);
+
+            LuxPresenter.Services.ThumbnailService.CleanupOrphanedThumbnails(allActivePaths);
+        }
+        catch { }
+    }
 
     private void OnMenuExitClick(object sender, RoutedEventArgs e)
 

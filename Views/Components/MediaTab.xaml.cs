@@ -29,6 +29,18 @@ public partial class MediaTab : UserControl
         }
     }
 
+    private void OnMediaKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Delete or Key.Back)
+        {
+            if (DataContext is MediaViewModel vm && vm.DeleteMediaCommand.CanExecute(null))
+            {
+                vm.DeleteMediaCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
+    }
+
     private void OnMediaOptionsClick(object sender, RoutedEventArgs e)
     {
         if (DataContext is MediaViewModel vm && sender is FrameworkElement fe)

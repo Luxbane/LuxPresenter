@@ -22,6 +22,7 @@ public interface IDataService
     List<MediaItem> GetMediaItems();
     void AddMediaItem(MediaItem media);
     void DeleteMediaItem(string mediaId);
+    void CleanupOrphanedMedia();
 
     List<PresentationDocItem> GetPresentationDocs();
     void AddPresentationDoc(PresentationDocItem doc);

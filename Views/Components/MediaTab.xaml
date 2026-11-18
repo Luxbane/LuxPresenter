@@ -52,7 +52,8 @@
                      SelectedItem="{Binding SelectedMedia}"
                      BorderThickness="0"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     PreviewKeyDown="OnMediaKeyDown">
                 <ListBox.Style>
                     <Style TargetType="ListBox">
                         <Setter Property="Visibility" Value="Visible"/>
@@ -112,7 +113,8 @@
                      SelectedItem="{Binding SelectedMedia}"
                      BorderThickness="0"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     PreviewKeyDown="OnMediaKeyDown">
                 <ListBox.Style>
                     <Style TargetType="ListBox">
                         <Setter Property="Visibility" Value="Collapsed"/>
