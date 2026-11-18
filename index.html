@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LuxPresenter - Free & Open Source Church Worship Presentation Software</title>
+  <meta name="description" content="A modern, high-performance, open-source church presentation and worship projection software for Windows. Built with C# .NET 10 and Gemini 3.8 Flash." />
+  <meta name="keywords" content="church presentation software, worship software, open source worship, church projection, lyrics projection, powerpoint church, free worship presenter, luxpresenter" />
+  <meta name="author" content="Luxbane" />
+
+  <meta name="google-site-verification" content="f6gSzaQFD_0EeoMXRsKfZktGqoBjul7CzXklPzE-538" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://luxbane.github.io/LuxPresenter/" />
+  <meta property="og:title" content="LuxPresenter - Modern Church Presentation Software" />
+  <meta property="og:description" content="Free, open-source, clutter-free dual display projection software for church worship teams, songs, presentations, and hardware-accelerated 4K media." />
+  <meta property="og:image" content="app_icon.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://luxbane.github.io/LuxPresenter/" />
+  <meta property="twitter:title" content="LuxPresenter - Modern Church Presentation Software" />
+  <meta property="twitter:description" content="Free, open-source church presentation software for Windows. Dual display, typo-guard lyrics search, PowerPoint engine, and 4K video playback." />
+  <meta property="twitter:image" content="app_icon.png" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="app_icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1a2234;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-highlight: rgba(59, 130, 246, 0.4);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent-cyan: #06b6d4;
+      --accent-purple: #8b5cf6;
+      --accent-green: #10b981;
+      --accent-kofi: #ff5e5b;
+      --accent-itch: #fa5c5c;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --shadow-glow: 0 0 50px -10px rgba(59, 130, 246, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Ambient Background Gradients */
+    .ambient-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(140px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.18;
+    }
+    .glow-1 {
+      top: -100px;
+      left: 15%;
+      background: radial-gradient(circle, #3b82f6 0%, transparent 70%);
+    }
+    .glow-2 {
+      top: 250px;
+      right: 10%;
+      background: radial-gradient(circle, #8b5cf6 0%, transparent 70%);
+    }
+
+    /* Navigation */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 40%, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.925rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: #fff;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.925rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(37, 99, 235, 0.5);
+      background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.04);
+      color: #f3f4f6;
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      color: #fff;
+    }
+
+    .btn-itch {
+      background: rgba(250, 92, 92, 0.12);
+      color: #ff8585;
+      border: 1px solid rgba(250, 92, 92, 0.3);
+    }
+
+    .btn-itch:hover {
+      background: #fa5c5c;
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(250, 92, 92, 0.4);
+    }
+
+    .btn-kofi {
+      background: rgba(255, 94, 91, 0.12);
+      color: #ffa4a2;
+      border: 1px solid rgba(255, 94, 91, 0.3);
+    }
+
+    .btn-kofi:hover {
+      background: #ff5e5b;
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(255, 94, 91, 0.4);
+    }
+
+    .btn-lg {
+      padding: 0.85rem 1.75rem;
+      font-size: 1.05rem;
+      border-radius: var(--radius-md);
+    }
+
+    /* Hero Section */
+    .hero {
+      position: relative;
+      padding: 5rem 1.5rem 4rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+      z-index: 1;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.4rem 1rem;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 9999px;
+      color: #93c5fd;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 5.5vw, 4.25rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #60a5fa 20%, #a78bfa 70%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1.1rem, 2vw, 1.25rem);
+      color: var(--text-muted);
+      max-width: 780px;
+      margin: 0 auto 2.5rem;
+      font-weight: 400;
+      line-height: 1.7;
+    }
+
+    .hero-cta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    /* GTA 6 Callout Banner */
+    .gta-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1.5rem;
+      border-radius: var(--radius-md);
+      background: linear-gradient(90deg, rgba(234, 88, 12, 0.12), rgba(217, 70, 239, 0.12));
+      border: 1px solid rgba(234, 88, 12, 0.3);
+      color: #fde047;
+      font-size: 0.925rem;
+      font-weight: 600;
+      margin-bottom: 3.5rem;
+      box-shadow: 0 4px 20px rgba(234, 88, 12, 0.1);
+    }
+
+    .gta-banner span.emoji {
+      font-size: 1.35rem;
+    }
+
+
+    /* Section Headers */
+    .section {
+      padding: 5rem 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 3.5rem;
+    }
+
+    .section-tag {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #60a5fa;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 3.5vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-highlight);
+      box-shadow: 0 12px 30px -10px rgba(59, 130, 246, 0.25);
+      background: var(--bg-surface-elevated);
+    }
+
+    .feature-icon-wrapper {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #60a5fa;
+      margin-bottom: 1.25rem;
+    }
+
+    .feature-card:nth-child(2) .feature-icon-wrapper {
+      background: rgba(139, 92, 246, 0.12);
+      border-color: rgba(139, 92, 246, 0.25);
+      color: #a78bfa;
+    }
+
+    .feature-card:nth-child(3) .feature-icon-wrapper {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+    }
+
+    .feature-card:nth-child(4) .feature-icon-wrapper {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.25);
+      color: #fbbf24;
+    }
+
+    .feature-card:nth-child(5) .feature-icon-wrapper {
+      background: rgba(6, 182, 212, 0.12);
+      border-color: rgba(6, 182, 212, 0.25);
+      color: #22d3ee;
+    }
+
+    .feature-card:nth-child(6) .feature-icon-wrapper {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #f87171;
+    }
+
+    .feature-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-text {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .feature-pill {
+      margin-top: 1.25rem;
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #94a3b8;
+    }
+
+    /* Comparison / Why LuxPresenter */
+    .why-section {
+      background: linear-gradient(180deg, transparent 0%, rgba(17, 24, 39, 0.6) 100%);
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .highlight-card {
+      padding: 1.75rem;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .highlight-number {
+      font-size: 2.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .highlight-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .highlight-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Downloads Matrix */
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.75rem;
+      margin-bottom: 3rem;
+    }
+
+    .download-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .download-card.featured {
+      border-color: rgba(59, 130, 246, 0.5);
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, var(--bg-surface) 100%);
+      box-shadow: 0 8px 30px -10px rgba(59, 130, 246, 0.3);
+    }
+
+    .download-tag {
+      position: absolute;
+      top: -12px;
+      right: 24px;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .download-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .download-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .download-file {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #60a5fa;
+      background: rgba(59, 130, 246, 0.1);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 0.75rem;
+    }
+
+    .download-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .download-features {
+      list-style: none;
+      margin-bottom: 2rem;
+    }
+
+    .download-features li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: #d1d5db;
+      margin-bottom: 0.6rem;
+    }
+
+    .download-features li svg {
+      color: #10b981;
+      flex-shrink: 0;
+    }
+
+    /* System Requirements Box */
+    .requirements-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+
+    .req-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: #d1d5db;
+      font-size: 0.9rem;
+    }
+
+    .req-item strong {
+      color: #fff;
+    }
+
+    /* Support / CTA Box */
+    .support-banner {
+      background: radial-gradient(circle at top right, rgba(255, 94, 91, 0.15), transparent 70%),
+                  radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.15), transparent 70%),
+                  var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 3.5rem 2rem;
+      text-align: center;
+      margin-top: 3rem;
+    }
+
+    .support-banner h3 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .support-banner p {
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+      font-size: 1.05rem;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 3.5rem 1.5rem 2rem;
+      background: #060910;
+    }
+
+    .footer-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .footer-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: #fff;
+    }
+
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #64748b;
+      gap: 1rem;
+    }
+
+    /* Animations */
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+      .hero {
+        padding: 3.5rem 1rem 2.5rem;
+      }
+      .hero-cta {
+        flex-direction: column;
+        width: 100%;
+      }
+      .hero-cta .btn {
+        width: 100%;
+      }
+      .section {
+        padding: 3.5rem 1rem;
+      }
+      .download-card {
+        padding: 1.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Glow Backgrounds -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- Header / Nav -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="brand">
+        <img src="app_icon.png" alt="LuxPresenter Logo" />
+        <span class="brand-title">LuxPresenter</span>
+        <span class="brand-badge">v1.0.0</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#why">Why LuxPresenter</a></li>
+        <li><a href="#downloads">Downloads</a></li>
+        <li><a href="https://github.com/luxbane/LuxPresenter" target="_blank" rel="noopener">Source Code</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="https://github.com/luxbane/LuxPresenter" target="_blank" rel="noopener" class="btn btn-outline" title="Star on GitHub">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>Star</span>
+        </a>
+        <a href="#downloads" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Get LuxPresenter</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="pill-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+      </svg>
+      <span>LuxPresenter v1.0.0 Released • 100% Free &amp; Open-Source (GPLv3)</span>
+    </div>
+
+    <h1 class="hero-title">
+      Modern Church Presentation<br />
+      <span>Simple. Powerful. Free Forever.</span>
+    </h1>
+
+    <p class="hero-subtitle">
+      A fast, reliable, clutter-free dual display projection software for church worship teams.
+      Seamlessly present songs, scriptures, PowerPoint slides, and hardware-accelerated 4K media without expensive monthly subscriptions.
+    </p>
+
+    <div class="hero-cta">
+      <a href="#downloads" class="btn btn-primary btn-lg">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Download for Windows</span>
+      </a>
+
+      <a href="https://luxbane.itch.io/luxpresenter" target="_blank" rel="noopener" class="btn btn-itch btn-lg">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M2.5 4.5A2.5 2.5 0 0 0 0 7v2a2.5 2.5 0 0 0 2.5 2.5h.5a2.5 2.5 0 0 0 2.5-2.5V7a2.5 2.5 0 0 0-2.5-2.5h-.5zm5 0A2.5 2.5 0 0 0 5 7v2a2.5 2.5 0 0 0 2.5 2.5h.5A2.5 2.5 0 0 0 10.5 9V7A2.5 2.5 0 0 0 8 4.5h-.5zm5 0A2.5 2.5 0 0 0 10 7v2a2.5 2.5 0 0 0 2.5 2.5h.5a2.5 2.5 0 0 0 2.5-2.5V7a2.5 2.5 0 0 0-2.5-2.5h-.5zm5 0A2.5 2.5 0 0 0 15 7v2a2.5 2.5 0 0 0 2.5 2.5h.5a2.5 2.5 0 0 0 2.5-2.5V7a2.5 2.5 0 0 0-2.5-2.5h-.5zM2 13v6a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-6H2zm5 2h2v2H7v-2zm8 0h2v2h-2v-2z"/>
+        </svg>
+        <span>Download on itch.io</span>
+      </a>
+
+      <a href="https://github.com/luxbane/LuxPresenter" target="_blank" rel="noopener" class="btn btn-outline btn-lg">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        <span>GitHub Repository</span>
+      </a>
+    </div>
+
+    <!-- GTA 6 Fun Fact Callout -->
+    <div class="gta-banner">
+      <span class="emoji">🎮⛪</span>
+      <span>
+        <strong>Fun Fact:</strong> We officially got a free, full-featured open-source church worship presenter software one day before GTA 6!
+      </span>
+    </div>
+
+
+  </section>
+
+  <!-- Key Features Section -->
+  <section class="section" id="features">
+    <div class="section-header">
+      <div class="section-tag">Powerful &amp; Intuitive</div>
+      <h2 class="section-title">Everything Your Church AV Team Needs</h2>
+      <p class="section-desc">
+        Designed from the ground up for high-pressure live worship services. Zero clutter, lightning-fast search, and dependable stability.
+      </p>
+    </div>
+
+    <div class="features-grid">
+      <!-- Feature 1 -->
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+        </div>
+        <h3 class="feature-title">Smart Song Search &amp; Typo Guard</h3>
+        <p class="feature-text">
+          Real-time inline suggestion with auto-selection. Type letters, preview updates instantly; typo-prevention stops invalid keystrokes, and hitting [Enter] directly pushes the slide live to the congregation.
+        </p>
+        <span class="feature-pill">Live Autocomplete • Enter to Live</span>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </div>
+        <h3 class="feature-title">True Dual-Display Output</h3>
+        <p class="feature-text">
+          Full separation between Operator Control Console and borderless Projector Output. Preview upcoming slides, manage service orders, and trigger smooth blend crossfades.
+        </p>
+        <span class="feature-pill">Independent Monitors • Zero Output Flicker</span>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+        </div>
+        <h3 class="feature-title">PowerPoint &amp; PDF Engine</h3>
+        <p class="feature-text">
+          Present sermon slides seamlessly with the integrated LibreOffice Impress bridge and Google PDFium renderer. Full thumbnail generation and multi-screen projection of PPTX, PPT, ODP, and PDF.
+        </p>
+        <span class="feature-pill">Auto Presentation Cache • PDFium &amp; Impress</span>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </div>
+        <h3 class="feature-title">Hardware 4K Video Player (libmpv)</h3>
+        <p class="feature-text">
+          GPU-accelerated video playback engine powered by libmpv. Supports 4K 60fps MP4, MKV, WebM, flawless video looping, low-latency audio sync, and zero dropped frames during worship.
+        </p>
+        <span class="feature-pill">Hardware Acceleration • Seamless Loops</span>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </div>
+        <h3 class="feature-title">Online Browser &amp; AdBlocker</h3>
+        <p class="feature-text">
+          Built-in incognito Microsoft Edge WebView2 browser with adblocker support. Stream YouTube videos, live feeds, or online lyrics without popups, banners, or embarrassing video ads during service.
+        </p>
+        <span class="feature-pill">Edge WebView2 • Clean Ad-Free Projection</span>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+        </div>
+        <h3 class="feature-title">Nursery &amp; Scrolling Ticker Alerts</h3>
+        <p class="feature-text">
+          Display urgent parent callouts or scrolling service banners directly on top of the live screen without interrupting the sermon or worship song. Full priority queue with customizable repetition.
+        </p>
+        <span class="feature-pill">Parent Pager • Live Ticker • Quick Overlays</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why LuxPresenter Comparison Section -->
+  <section class="section why-section" id="why">
+    <div class="section-header">
+      <div class="section-tag">Pure Freedom</div>
+      <h2 class="section-title">Built for the Global Church</h2>
+      <p class="section-desc">
+        No vendor lock-in. No cloud dependency. No subscriptions. Just clean, open-source presentation software for ministries of any size.
+      </p>
+    </div>
+
+    <div class="grid-4">
+      <div class="highlight-card">
+        <div class="highlight-number">$0</div>
+        <h4 class="highlight-title">100% Free &amp; Open Source</h4>
+        <p class="highlight-desc">Licensed under GNU GPLv3. Freely use, study, and deploy on as many church computers as you need.</p>
+      </div>
+
+      <div class="highlight-card">
+        <div class="highlight-number">100%</div>
+        <h4 class="highlight-title">Offline First Reliability</h4>
+        <p class="highlight-desc">No mandatory cloud logins or active internet connections required during Sunday service. Your service never stalls.</p>
+      </div>
+
+      <div class="highlight-card">
+        <div class="highlight-number">0.1s</div>
+        <h4 class="highlight-title">Instant Response Time</h4>
+        <p class="highlight-desc">Engineered in high-performance C# .NET 10 WPF with native GPU rendering. Instant slide changes and song switching.</p>
+      </div>
+
+      <div class="highlight-card">
+        <div class="highlight-number">AI</div>
+        <h4 class="highlight-title">Built with Gemini 3.8 Flash</h4>
+        <p class="highlight-desc">Crafted and optimized using state-of-the-art Google Gemini 3.8 Flash intelligence for ultra-clean architecture.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Downloads Section -->
+  <section class="section" id="downloads">
+    <div class="section-header">
+      <div class="section-tag">Get Started Today</div>
+      <h2 class="section-title">Download LuxPresenter v1.0.0</h2>
+      <p class="section-desc">
+        Choose the package that fits your setup. Compatible with 64-bit Windows 10 and Windows 11.
+      </p>
+    </div>
+
+    <div class="download-grid">
+      <!-- Card 1: Installer -->
+      <div class="download-card featured">
+        <div class="download-tag">Recommended</div>
+        <div class="download-header">
+          <h3 class="download-title">Windows Installer</h3>
+          <span class="download-file">LuxPresenter_Setup.exe</span>
+          <p class="download-desc">Standard setup wizard for church desktop PCs and AV workstations.</p>
+        </div>
+
+        <ul class="download-features">
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Includes bundled presentation engine
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Hardware-accelerated libmpv 4K video
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Start Menu shortcut &amp; auto-updater
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Complete self-contained runtimes
+          </li>
+        </ul>
+
+        <a href="https://github.com/luxbane/LuxPresenter/releases" target="_blank" rel="noopener" class="btn btn-primary btn-lg" style="width: 100%;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Download Installer (.exe)</span>
+        </a>
+      </div>
+
+      <!-- Card 2: Portable -->
+      <div class="download-card">
+        <div class="download-header">
+          <h3 class="download-title">Portable Edition</h3>
+          <span class="download-file">LuxPresenter-Portable.zip</span>
+          <p class="download-desc">Zero installation required. Extract to a USB drive and run on any Windows PC.</p>
+        </div>
+
+        <ul class="download-features">
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Self-contained settings &amp; song database
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Leaves no traces on host machine
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Ideal for guest laptops &amp; backup drives
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Ready to run right out of the box
+          </li>
+        </ul>
+
+        <a href="https://github.com/luxbane/LuxPresenter/releases" target="_blank" rel="noopener" class="btn btn-outline btn-lg" style="width: 100%;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Download Portable (.rar)</span>
+        </a>
+      </div>
+
+      <!-- Card 3: itch.io & Patch -->
+      <div class="download-card">
+        <div class="download-header">
+          <h3 class="download-title">itch.io Hub</h3>
+          <span class="download-file">luxbane.itch.io/luxpresenter</span>
+          <p class="download-desc">Official game &amp; indie app community release with optional donor contributions.</p>
+        </div>
+
+        <ul class="download-features">
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            High-speed itch.io CDN mirrors
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Community ratings and comments
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Includes Delta Patch update archives
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Direct itch.io app launcher support
+          </li>
+        </ul>
+
+        <a href="https://luxbane.itch.io/luxpresenter" target="_blank" rel="noopener" class="btn btn-itch btn-lg" style="width: 100%;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.5 4.5A2.5 2.5 0 0 0 0 7v2a2.5 2.5 0 0 0 2.5 2.5h.5a2.5 2.5 0 0 0 2.5-2.5V7a2.5 2.5 0 0 0-2.5-2.5h-.5zm5 0A2.5 2.5 0 0 0 5 7v2a2.5 2.5 0 0 0 2.5 2.5h.5A2.5 2.5 0 0 0 10.5 9V7A2.5 2.5 0 0 0 8 4.5h-.5zm5 0A2.5 2.5 0 0 0 10 7v2a2.5 2.5 0 0 0 2.5 2.5h.5a2.5 2.5 0 0 0 2.5-2.5V7a2.5 2.5 0 0 0-2.5-2.5h-.5zm5 0A2.5 2.5 0 0 0 15 7v2a2.5 2.5 0 0 0 2.5 2.5h.5a2.5 2.5 0 0 0 2.5-2.5V7a2.5 2.5 0 0 0-2.5-2.5h-.5zM2 13v6a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-6H2zm5 2h2v2H7v-2zm8 0h2v2h-2v-2z"/>
+          </svg>
+          <span>Get on itch.io</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- System Requirements Box -->
+    <div class="requirements-box">
+      <div class="req-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #60a5fa;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        <span><strong>Operating System:</strong> Windows 10 / 11 (64-bit)</span>
+      </div>
+      <div class="req-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #60a5fa;"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+        <span><strong>RAM &amp; CPU:</strong> 4GB+ RAM, Intel Core i3 / Ryzen 3 or newer</span>
+      </div>
+      <div class="req-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #60a5fa;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        <span><strong>Display:</strong> Dual Monitors (Operator Screen + Projector / TV)</span>
+      </div>
+    </div>
+
+    <!-- Support Banner -->
+    <div class="support-banner">
+      <h3>Support Ongoing Development</h3>
+      <p>
+        LuxPresenter is 100% free and open source. If it blesses your worship team and church service, consider buying us a coffee on Ko-fi!
+      </p>
+      <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+        <a href="https://ko-fi.com/luxbane" target="_blank" rel="noopener" class="btn btn-kofi btn-lg">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.022 5.093c-1.52 1.554-4.016 1.554-5.536 0-1.52-1.554-1.52-4.074 0-5.628 1.52-1.554 4.016-1.554 5.536 0 1.52 1.554 1.52 4.074 0 5.628zm8.685-2.029c-.297 1.504-1.622 1.533-1.622 1.533V7.274s1.325.029 1.622 1.533c.297 1.504.297 1.704 0 3.208z"/>
+          </svg>
+          <span>Support on Ko-fi</span>
+        </a>
+        <a href="https://github.com/luxbane/LuxPresenter/issues" target="_blank" rel="noopener" class="btn btn-outline btn-lg">
+          <span>Request Features / Report Bug</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <img src="app_icon.png" alt="LuxPresenter" style="width: 28px; height: 28px; border-radius: 6px;" />
+          <span style="font-size: 1.15rem; font-weight: 700; color: #fff;">LuxPresenter</span>
+        </div>
+        <p style="color: #64748b; font-size: 0.85rem; max-width: 320px;">
+          Modern, open-source church presentation and worship projection software for Windows.
+        </p>
+      </div>
+
+      <ul class="footer-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#downloads">Downloads</a></li>
+        <li><a href="https://github.com/luxbane/LuxPresenter/blob/main/LICENSE" target="_blank" rel="noopener">GPLv3 License</a></li>
+        <li><a href="https://github.com/luxbane/LuxPresenter" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://luxbane.itch.io/luxpresenter" target="_blank" rel="noopener">itch.io</a></li>
+        <li><a href="https://ko-fi.com/luxbane" target="_blank" rel="noopener">Ko-fi</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-bottom">
+      <div>
+        © 2026 LuxPresenter. Released under the <strong>GNU General Public License v3.0 (GPLv3)</strong>.
+      </div>
+      <div>
+        Developed &amp; crafted with <strong>Gemini 3.8 Flash</strong>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

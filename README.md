@@ -37,7 +37,7 @@ Pre-compiled binaries and standalone packages are available through the followin
 
 ### Available Packages
 * **Installer (`LuxPresenter_Setup.exe`):** Recommended for general use. Installs the complete suite including required media runtimes and LibreOffice presentation engine.
-* **Portable Package (`LuxPresenter-Portable.rar`):** Standalone archive that runs out of the box without system-wide installation.
+* **Portable Package (`LuxPresenter-Portable.zip`):** Standalone archive that runs out of the box without system-wide installation.
 * **Patch Update (`LuxPresenter-Patch.zip`):** Quick updater for existing installations without redownloading heavy runtimes.
 
 ---
