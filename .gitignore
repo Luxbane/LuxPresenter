@@ -1,0 +1,50 @@
+# ========================================================
+# .gitignore for LuxPresenter
+# ========================================================
+
+# Build and Compilation Artifacts (.NET / C#)
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.pdb
+*.VisualState.xml
+
+# IDE and Editor Folders
+.vs/
+.vscode/
+
+# Local Machine and Runtime Logs
+display_log.txt
+media_log.txt
+*.log
+
+# Windows System and Explorer Metadata
+desktop.ini
+Thumbs.db
+ehthumbs.db
+
+# WebView2 Browser Cache
+*.WebView2/
+EBWebView/
+
+# User Documents and Private Presentations (Strict Privacy Rule)
+*.pptx
+*.ppt
+*.ppsx
+*.pps
+*.odp
+*.pdf
+Data/PresentationCache/
+
+# Proprietary Database Dumps & Carved Assets (Strict Copyright Rule)
+Data/ExtractedEW/
+EW2009_Database/
+Data/Media/CleanBackgrounds/
+inspect.ps1
+
+# Bundled Engines & Extensions (Keep in installer/releases, not Git repository)
+Engines/
+Extensions/

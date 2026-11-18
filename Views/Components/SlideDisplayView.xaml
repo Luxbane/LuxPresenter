@@ -1,0 +1,68 @@
+﻿<UserControl x:Class="LuxPresenter.Views.Components.SlideDisplayView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:converters="clr-namespace:LuxPresenter.Converters"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="400">
+    <UserControl.Resources>
+        <converters:HexOrImageBrushConverter x:Key="HexOrImageBrushConverter"/>
+    </UserControl.Resources>
+
+    <!-- Slide Canvas (Aspect ratio preserved with Viewbox/Border) -->
+    <Border Background="Black" CornerRadius="4" ClipToBounds="True">
+        <Grid Background="{Binding Background, Converter={StaticResource HexOrImageBrushConverter}}">
+            <!-- Content Area with Margins -->
+            <Grid Margin="20,15,20,15">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header (Reference/Book) -->
+                <TextBlock Grid.Row="0"
+                           Text="{Binding CurrentSlide.Title}"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="#E2E8F0"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,8">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Opacity="0.9"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+
+                <!-- Main Text -->
+                <Viewbox Grid.Row="1" StretchDirection="DownOnly" Stretch="Uniform">
+                    <TextBlock Text="{Binding CurrentSlide.Content}"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               LineHeight="32">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="2" Opacity="0.95"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+                </Viewbox>
+
+                <!-- Footer (Song Subtitle / Scripture Version) -->
+                <TextBlock Grid.Row="2"
+                           Text="{Binding CurrentSlide.Subtitle}"
+                           FontSize="11"
+                           Foreground="#94A3B8"
+                           HorizontalAlignment="Right"
+                           Margin="0,6,0,0">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Opacity="0.9"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

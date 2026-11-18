@@ -1,0 +1,245 @@
+<Window x:Class="LuxPresenter.Views.BackgroundOptionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:LuxPresenter.Converters"
+        Title="Background Options"
+        Width="680" Height="480"
+        MinWidth="540" MinHeight="400"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False"
+        Background="{DynamicResource WindowBgBrush}"
+        Foreground="{DynamicResource TextPrimaryBrush}">
+
+    <Window.Resources>
+        <converters:HexOrImageBrushConverter x:Key="HexOrImageBrushConverter"/>
+        <converters:MediaTypeToIconConverter x:Key="MediaTypeToIconConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style x:Key="ActionBtn" TargetType="Button">
+            <Setter Property="FontFamily" Value="Tahoma"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="10,3"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="{DynamicResource ButtonBgBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ButtonHoverBgBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+                    <Setter Property="Opacity" Value="0.6"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Main content area -->
+            <RowDefinition Height="*"/>
+            <!-- Bottom action bar -->
+            <RowDefinition Height="Auto"/>
+            <!-- OK / Cancel bar -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ===== MAIN CONTENT: Left Preview + Right Thumbnail Grid ===== -->
+        <Grid Grid.Row="0" Margin="10,10,10,6">
+            <Grid.ColumnDefinitions>
+                <!-- Left: Monitor Preview -->
+                <ColumnDefinition Width="210" MinWidth="170"/>
+                <!-- Splitter -->
+                <ColumnDefinition Width="8"/>
+                <!-- Right: Thumbnail Grid -->
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT: Monitor Preview Panel -->
+            <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                <!-- Slide Preview inside Monitor Frame -->
+                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="#111111"
+                        Height="130" Margin="0,0,0,6" ClipToBounds="True">
+                    <!-- Slide preview -->
+                    <Grid>
+                        <!-- Slide preview with static thumbnail frame for video/image backgrounds -->
+                        <Rectangle x:Name="PreviewBackgroundRect" Fill="{Binding SelectedBackground, Converter={StaticResource HexOrImageBrushConverter}}"/>
+
+                        <Rectangle Fill="#18000000"/>
+                        <TextBlock x:Name="TxtPreviewContent"
+                                   Text="Preview text will appear here"
+                                   FontFamily="Tahoma" FontSize="10" FontWeight="Bold"
+                                   Foreground="White" TextAlignment="Center"
+                                   TextWrapping="Wrap" VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" Margin="8,4">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="2" Opacity="0.9"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                        <!-- Video icon overlay for video backgrounds -->
+                        <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                Margin="4" Padding="3,1"
+                                Background="#CC000000" CornerRadius="2"
+                                Visibility="{Binding IsSelectedVideo, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="▶ VIDEO" FontSize="8" Foreground="#00CFFF" FontFamily="Tahoma" FontWeight="Bold"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Monitor stand / frame decoration -->
+                <Border Height="10" Background="{DynamicResource SurfaceBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,1,1"
+                        Margin="20,0,20,0" CornerRadius="0,0,2,2"/>
+                <Rectangle Height="4" Fill="{DynamicResource BorderBrush}" Margin="40,0,40,0"/>
+                <Rectangle Height="2" Fill="{DynamicResource SplitterBgBrush}" Margin="30,0,30,4"/>
+
+                <!-- Checkbox: Override Global Options -->
+                <CheckBox x:Name="ChkOverride"
+                          Content="Override Global Options&#10;for this Background"
+                          FontFamily="Tahoma" FontSize="10"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          Margin="0,6,0,0"
+                          IsEnabled="{Binding HasSelectedBackground}"/>
+            </StackPanel>
+
+            <!-- RIGHT: Thumbnail Grid -->
+            <Border Grid.Column="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource ListBgBrush}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Scrollable thumbnail grid -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl x:Name="ThumbnailGrid"
+                                      ItemsSource="{Binding BackgroundItems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" Margin="4"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border x:Name="ThumbBorder"
+                                            Width="76" Height="54"
+                                            Margin="3"
+                                            BorderThickness="2"
+                                            Cursor="Hand"
+                                            PreviewMouseLeftButtonDown="OnThumbnailClick">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="BorderBrush" Value="#0078D7"/>
+                                                    </DataTrigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+
+                                        <!-- Background fill (image or color) -->
+                                        <Grid Background="{Binding BackgroundItem, Converter={StaticResource HexOrImageBrushConverter}}"
+                                              ClipToBounds="True">
+                                            <!-- Video icon overlay -->
+                                            <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Visibility="{Binding IsVideo, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="▶" FontSize="20" Foreground="#AAFFFFFF"
+                                                           FontWeight="Bold" TextAlignment="Center"/>
+                                            </Border>
+                                            <!-- Selection highlight -->
+                                            <Border Background="#440078D7"
+                                                    Visibility="{Binding IsSelected, Converter={StaticResource BoolToVis}}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Empty state message -->
+                    <TextBlock Text="No backgrounds added yet.&#10;Click + Add to add image or video backgrounds."
+                               FontFamily="Tahoma" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                               TextAlignment="Center" VerticalAlignment="Center"
+                               HorizontalAlignment="Center" TextWrapping="Wrap"
+                               Margin="20">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasItems}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ===== BOTTOM ACTION BAR: Add, Add Multiple, Delete, Edit ===== -->
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceBgBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1,0,1" Padding="10,5">
+            <DockPanel>
+                <!-- Add / Add Multiple / Delete / Edit buttons (left-aligned like EW 2009) -->
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button Style="{StaticResource ActionBtn}" Click="OnAddClick">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="+" FontWeight="Bold" Margin="0,0,3,0"/>
+                            <TextBlock Text="Add"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource ActionBtn}" Click="OnAddMultipleClick"
+                            Content="Add Multiple"/>
+                    <Button Style="{StaticResource ActionBtn}" Click="OnDeleteClick"
+                            IsEnabled="{Binding HasSelectedBackground}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="−" FontWeight="Bold" Margin="0,0,3,0"/>
+                            <TextBlock Text="Delete"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ===== OK / CANCEL BAR ===== -->
+        <Border Grid.Row="2" Background="{DynamicResource WindowBgBrush}" Padding="10,7">
+            <DockPanel>
+                <!-- Preview Live Output checkbox -->
+                <CheckBox x:Name="ChkPreviewLive"
+                          Content="Preview Live Output"
+                          FontFamily="Tahoma" FontSize="11"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          DockPanel.Dock="Left"
+                          VerticalAlignment="Center"
+                          Margin="0,0,12,0"/>
+
+                <!-- OK / Cancel -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="OK" Width="72" Height="24"
+                            FontFamily="Tahoma" FontSize="11"
+                            IsDefault="True" Click="OnOkClick"
+                            Margin="0,0,6,0"
+                            Background="{DynamicResource ButtonBgBrush}"
+                            BorderBrush="{DynamicResource ButtonBorderBrush}"
+                            Foreground="{DynamicResource TextPrimaryBrush}"
+                            FontWeight="SemiBold"/>
+                    <Button Content="Cancel" Width="72" Height="24"
+                            FontFamily="Tahoma" FontSize="11"
+                            IsCancel="True" Click="OnCancelClick"
+                            Background="{DynamicResource ButtonBgBrush}"
+                            BorderBrush="{DynamicResource ButtonBorderBrush}"
+                            Foreground="{DynamicResource TextPrimaryBrush}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

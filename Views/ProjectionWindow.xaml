@@ -1,0 +1,217 @@
+<Window x:Class="LuxPresenter.Views.ProjectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:components="clr-namespace:LuxPresenter.Views.Components"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="Projector Output" 
+        WindowStyle="None" 
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="False"
+        ShowInTaskbar="False">
+    
+    <Grid x:Name="RootGrid" Background="#000000">
+        <!-- Transition Fade Curtain Layer for seamless Video/Media transitions -->
+        <Rectangle x:Name="TransitionCurtain" Fill="#000000" Opacity="0" Panel.ZIndex="0"/>
+
+        <!-- Double-buffered Background Image layers for smooth Crossfade / Blend transition -->
+        <Image x:Name="BackgroundImageA" Stretch="Fill" Opacity="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="1"/>
+        <Image x:Name="BackgroundImageB" Stretch="Fill" Opacity="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="1"/>
+
+        <!-- Dual-Deck Background Video layers for MediaElement (Smooth Blend Crossfade matching libmpv) -->
+        <MediaElement x:Name="BackgroundVideoElementA"
+                      LoadedBehavior="Manual"
+                      UnloadedBehavior="Stop"
+                      Stretch="Fill"
+                      IsMuted="True"
+                      Opacity="0"
+                      Visibility="Collapsed"
+                      MediaEnded="OnBackgroundVideoEndedA"
+                      ScrubbingEnabled="True"
+                      Panel.ZIndex="3"/>
+        <MediaElement x:Name="BackgroundVideoElementB"
+                      LoadedBehavior="Manual"
+                      UnloadedBehavior="Stop"
+                      Stretch="Fill"
+                      IsMuted="True"
+                      Opacity="0"
+                      Visibility="Collapsed"
+                      MediaEnded="OnBackgroundVideoEndedB"
+                      ScrubbingEnabled="True"
+                      Panel.ZIndex="4"/>
+
+        <!-- Slide Content Viewport (Preserves 16:9 Aspect Ratio on any projector resolution) -->
+        <Viewbox x:Name="SlideViewbox" Stretch="Uniform" StretchDirection="Both" Visibility="Visible" Panel.ZIndex="10">
+            <Grid x:Name="SlideCanvas" Width="1920" Height="1080" ClipToBounds="True">
+                
+                <!-- LAYER A (Double Buffer Crossfader) -->
+                <Grid x:Name="SlideContentGridA" Margin="100,20,100,70" Opacity="0">
+                    <Grid.CacheMode>
+                        <BitmapCache RenderAtScale="1" SnapsToDevicePixels="True"/>
+                    </Grid.CacheMode>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock x:Name="TxtHeaderA" 
+                               Grid.Row="0"
+                               FontFamily="Arial, Tahoma"
+                               FontSize="36" 
+                               FontWeight="Bold" 
+                               Foreground="#E0E6ED"
+                               HorizontalAlignment="Center" 
+                               Margin="0,0,0,24"
+                               Visibility="Collapsed">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="4" Direction="315" Opacity="0.95"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+
+                    <!-- Main Lyrics Text Layer A (Outlined White with crisp Black Stroke) -->
+                    <Viewbox x:Name="ContentViewboxA" Grid.Row="1" StretchDirection="DownOnly" Stretch="Uniform" VerticalAlignment="Center">
+                        <components:OutlinedTextBlock x:Name="TxtContentA"
+                                                      Width="1720"
+                                                      FontFamily="Arial, Tahoma"
+                                                      FontSize="84"
+                                                      FontWeight="Bold"
+                                                      Fill="White"
+                                                      Stroke="Black"
+                                                      StrokeThickness="5.0"
+                                                      TextAlignment="Center"
+                                                      TextWrapping="Wrap"/>
+                    </Viewbox>
+
+                    <TextBlock x:Name="TxtFooterA" 
+                               Grid.Row="2"
+                               FontFamily="Arial, Tahoma"
+                               FontSize="36" 
+                               FontWeight="Bold" 
+                               Foreground="White" 
+                               HorizontalAlignment="Right" 
+                               VerticalAlignment="Bottom"
+                               Margin="0,20,10,0">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="4" Direction="315" Opacity="0.95"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+                </Grid>
+
+                <!-- LAYER B (Double Buffer Crossfader) -->
+                <Grid x:Name="SlideContentGridB" Margin="100,20,100,70" Opacity="0">
+                    <Grid.CacheMode>
+                        <BitmapCache RenderAtScale="1" SnapsToDevicePixels="True"/>
+                    </Grid.CacheMode>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock x:Name="TxtHeaderB" 
+                               Grid.Row="0"
+                               FontFamily="Arial, Tahoma"
+                               FontSize="36" 
+                               FontWeight="Bold" 
+                               Foreground="#E0E6ED"
+                               HorizontalAlignment="Center" 
+                               Margin="0,0,0,24"
+                               Visibility="Collapsed">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="4" Direction="315" Opacity="0.95"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+
+                    <!-- Main Lyrics Text Layer B (Outlined White with crisp Black Stroke) -->
+                    <Viewbox x:Name="ContentViewboxB" Grid.Row="1" StretchDirection="DownOnly" Stretch="Uniform" VerticalAlignment="Center">
+                        <components:OutlinedTextBlock x:Name="TxtContentB"
+                                                      Width="1720"
+                                                      FontFamily="Arial, Tahoma"
+                                                      FontSize="84"
+                                                      FontWeight="Bold"
+                                                      Fill="White"
+                                                      Stroke="Black"
+                                                      StrokeThickness="5.0"
+                                                      TextAlignment="Center"
+                                                      TextWrapping="Wrap"/>
+                    </Viewbox>
+
+                    <TextBlock x:Name="TxtFooterB" 
+                               Grid.Row="2"
+                               FontFamily="Arial, Tahoma"
+                               FontSize="36" 
+                               FontWeight="Bold" 
+                               Foreground="White" 
+                               HorizontalAlignment="Right" 
+                               VerticalAlignment="Bottom"
+                               Margin="0,20,10,0">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="4" Direction="315" Opacity="0.95"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+                </Grid>
+            </Grid>
+        </Viewbox>
+
+        <!-- Presentation Document Live Image Player (PDFium High-Resolution Native Rendering, Panel.ZIndex="15") -->
+        <Image x:Name="PresentationImage" 
+               HorizontalAlignment="Center" 
+               VerticalAlignment="Center" 
+               Stretch="Uniform" 
+               Visibility="Collapsed" 
+               Panel.ZIndex="15"
+               SnapsToDevicePixels="True"
+               RenderOptions.BitmapScalingMode="HighQuality"/>
+
+        <!-- Church Logo Overlay (When Logo Button is Active) -->
+        <Grid x:Name="LogoOverlay" Background="#001833" Visibility="Collapsed" Opacity="0" Panel.ZIndex="40">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Path Data="M 50,0 L 50,140 M 10,40 L 90,40" 
+                      Stroke="Gold" 
+                      StrokeThickness="10" 
+                      StrokeStartLineCap="Round" 
+                      StrokeEndLineCap="Round"
+                      HorizontalAlignment="Center"
+                      Margin="0,0,0,20"/>
+                <TextBlock Text="LUXPRESENTER" 
+                           FontFamily="Tahoma"
+                           FontSize="40" 
+                           FontWeight="Bold" 
+                           Foreground="White" 
+                           HorizontalAlignment="Center">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="3" Opacity="0.9"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </StackPanel>
+        </Grid>
+
+
+        <!-- Black Screen Overlay (When Black Button is Active) -->
+        <Rectangle x:Name="BlackOverlay" Fill="Black" Visibility="Collapsed" Opacity="0" Panel.ZIndex="30"/>
+
+        <!-- Bottom Message Alert Banner (Image 10) -->
+        <Grid x:Name="AlertBanner" 
+              VerticalAlignment="Bottom" 
+              Height="76" 
+              Background="#FF0000" 
+              Visibility="Collapsed" 
+              ClipToBounds="True"
+              Panel.ZIndex="20">
+            <Canvas x:Name="AlertCanvas" Height="76" HorizontalAlignment="Stretch">
+                <TextBlock x:Name="AlertTextBlock" 
+                           Canvas.Top="6"
+                           FontFamily="Tahoma, Arial Black" 
+                           FontSize="46" 
+                           FontWeight="Bold" 
+                           Foreground="White">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="3" Direction="315" Opacity="0.98"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </Canvas>
+        </Grid>
+    </Grid>
+</Window>

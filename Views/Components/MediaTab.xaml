@@ -1,0 +1,221 @@
+<UserControl x:Class="LuxPresenter.Views.Components.MediaTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:converters="clr-namespace:LuxPresenter.Converters"
+             mc:Ignorable="d" 
+             d:DesignHeight="400" d:DesignWidth="320">
+    <UserControl.Resources>
+        <converters:HexOrImageBrushConverter x:Key="HexOrImageBrushConverter"/>
+        <converters:MediaTypeToIconConverter x:Key="MediaTypeToIconConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid Background="{DynamicResource PanelBgBrush}">
+        <Grid.RowDefinitions>
+            <!-- 1. Folder Selector: [Folder Icon] [ Videos ▾ ] [ ... ] -->
+            <RowDefinition Height="Auto"/>
+            <!-- 2. Media Viewport (Kotak2 Grid or Model List) -->
+            <RowDefinition Height="*"/>
+            <!-- 3. Bottom Toolbar (+ Add, - Delete, ⚙) & Sub-tabs (Videos, Images, Audio) -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 1. TOP FOLDER SELECTOR BAR -->
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBgBrush}" Padding="6,4" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="📁" FontSize="14" Foreground="#38BDF8" VerticalAlignment="Center" Margin="2,0,6,0"/>
+
+                <ComboBox Grid.Column="1" SelectedIndex="{Binding SelectedCategoryIndex, Mode=TwoWay}" FontSize="11" Height="24" VerticalAlignment="Center">
+                    <ComboBoxItem Content="Videos"/>
+                    <ComboBoxItem Content="Images"/>
+                    <ComboBoxItem Content="Audio"/>
+                </ComboBox>
+
+                <Button Grid.Column="2" Content="..." Width="24" Height="24" Margin="4,0,0,0" FontSize="10" ToolTip="Browse Folder" Command="{Binding AddMediaCommand}"/>
+            </Grid>
+        </Border>
+
+        <!-- 2. MEDIA VIEWPORT -->
+        <Grid Grid.Row="1">
+            <!-- 2A. GRID VIEW (Kotak-kotak / Thumbnails) -->
+            <ListBox x:Name="MediaGridListBox"
+                     Background="{DynamicResource ListBgBrush}" 
+                     ItemsSource="{Binding MediaItems}" 
+                     SelectedItem="{Binding SelectedMedia}"
+                     BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <ListBox.Style>
+                    <Style TargetType="ListBox">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsGridView}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.Style>
+
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Filmstrip Thumbnail Card (Kotak-kotak) -->
+                        <Border Width="88" Height="68" Margin="3" CornerRadius="2" BorderBrush="#333333" BorderThickness="2"
+                                Background="{Binding FilePath, Converter={StaticResource HexOrImageBrushConverter}}"
+                                Cursor="Hand">
+                            <Grid>
+                                <!-- Top/Bottom Filmstrip sprocket holes effect -->
+                                <Rectangle Height="4" Fill="#30000000" VerticalAlignment="Top"/>
+                                <!-- Play/Audio icon overlay in center -->
+                                <TextBlock Text="{Binding Type, Converter={StaticResource MediaTypeToIconConverter}}" 
+                                           FontSize="16" Foreground="#D0FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <!-- Label at bottom -->
+                                <Border Background="#C0000000" VerticalAlignment="Bottom" Padding="2,1">
+                                    <TextBlock Text="{Binding Name}" FontSize="8" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="1"/>
+                        <EventSetter Event="MouseDoubleClick" Handler="OnMediaDoubleClick"/>
+                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnMediaClick"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#0078D7"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
+
+            <!-- 2B. LIST VIEW (Model List / Daftar) -->
+            <ListBox x:Name="MediaListListBox"
+                     Background="{DynamicResource ListBgBrush}" 
+                     ItemsSource="{Binding MediaItems}" 
+                     SelectedItem="{Binding SelectedMedia}"
+                     BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <ListBox.Style>
+                    <Style TargetType="ListBox">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsGridView}" Value="False">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.Style>
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <!-- List Item Row (Model List) -->
+                        <Grid Margin="2,2" Height="28">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Mini preview thumbnail -->
+                            <Border Grid.Column="0" Width="32" Height="22" CornerRadius="2" 
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                    Background="{Binding FilePath, Converter={StaticResource HexOrImageBrushConverter}}"
+                                    HorizontalAlignment="Left">
+                                <TextBlock Text="{Binding Type, Converter={StaticResource MediaTypeToIconConverter}}" 
+                                           FontSize="10" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Title / Name -->
+                            <TextBlock Grid.Column="1" Text="{Binding Name}" 
+                                       FontSize="11" VerticalAlignment="Center" 
+                                       Margin="6,0,4,0" 
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource ListItemTextBrush}"/>
+
+                            <!-- Media Type Badge -->
+                            <Border Grid.Column="2" Background="{DynamicResource SurfaceBgBrush}" 
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                    CornerRadius="2" Padding="4,1" VerticalAlignment="Center" Margin="0,0,4,0">
+                                <TextBlock Text="{Binding Type}" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="4,1"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <EventSetter Event="MouseDoubleClick" Handler="OnMediaDoubleClick"/>
+                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnMediaClick"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#0078D7"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
+
+            <!-- Empty state message if no media in category -->
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding MediaItems.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <TextBlock Text="🎬" FontSize="28" HorizontalAlignment="Center" Margin="0,0,0,4" Opacity="0.4"/>
+                <TextBlock Text="No media files found" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center"/>
+                <TextBlock Text="Click ➕ Add to add video, image or audio" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 3. BOTTOM ACTIONS & CATEGORY SUB-TABS -->
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+            <StackPanel>
+                <!-- Add / Delete Toolbar -->
+                <DockPanel Margin="6,3,6,2">
+                    <Button Content="➕ Add" Command="{Binding AddMediaCommand}" FontSize="10" Padding="6,2" Margin="0,0,4,0" Background="{DynamicResource ButtonBgBrush}" BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <Button Content="➖ Delete" Command="{Binding DeleteMediaCommand}" FontSize="10" Padding="6,2" Margin="0,0,4,0" Background="{DynamicResource ButtonBgBrush}" BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <Button x:Name="BtnMediaOptions" Click="OnMediaOptionsClick" 
+                            Background="Transparent" BorderThickness="0" 
+                            Padding="4,2" HorizontalAlignment="Right" VerticalAlignment="Center" 
+                            Cursor="Hand" ToolTip="Media Options (Switch between Grid and List View)">
+                        <TextBlock Text="⚙" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    </Button>
+                </DockPanel>
+
+                <!-- Sub-tabs: Videos | Images | Audio (Feeds & DVD removed) -->
+                <TabControl x:Name="MediaCategoryTabs" BorderThickness="0" Background="Transparent" 
+                            SelectedIndex="{Binding SelectedCategoryIndex, Mode=TwoWay}">
+                    <TabItem Header="Videos" FontSize="10" Padding="8,1"/>
+                    <TabItem Header="Images" FontSize="10" Padding="8,1"/>
+                    <TabItem Header="Audio" FontSize="10" Padding="8,1"/>
+                </TabControl>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

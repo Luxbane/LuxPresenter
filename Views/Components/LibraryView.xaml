@@ -1,0 +1,80 @@
+<UserControl x:Class="LuxPresenter.Views.Components.LibraryView"
+
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+
+             xmlns:components="clr-namespace:LuxPresenter.Views.Components"
+
+             mc:Ignorable="d" 
+
+             d:DesignHeight="350" d:DesignWidth="300">
+
+    <Grid Background="{DynamicResource PanelBgBrush}">
+
+        <TabControl x:Name="MainTabControl" 
+
+                    BorderThickness="0,1,0,0" 
+
+                    
+
+                    SelectionChanged="OnTabControlSelectionChanged">
+
+            <!-- Tab 1: Songs -->
+
+            <TabItem Header="Songs" FontSize="11" FontWeight="SemiBold">
+
+                <components:SongsTab DataContext="{Binding SongsVM}"/>
+
+            </TabItem>
+
+
+
+            <!-- Tab 2: Scriptures -->
+
+            <TabItem Header="Scriptures" FontSize="11" FontWeight="SemiBold">
+
+                <components:ScripturesTab DataContext="{Binding ScripturesVM}"/>
+
+            </TabItem>
+
+
+
+            <!-- Tab 3: Media -->
+
+            <TabItem Header="Media" FontSize="11" FontWeight="SemiBold">
+
+                <components:MediaTab DataContext="{Binding MediaVM}"/>
+
+            </TabItem>
+
+
+
+            <!-- Tab 4: Presentation -->
+
+            <TabItem Header="Presentation" FontSize="11" FontWeight="SemiBold">
+
+                <components:PresentationTab DataContext="{Binding PresentationVM}"/>
+
+            </TabItem>
+
+
+
+            <!-- Tab 5: Online -->
+
+            <TabItem Header="Online" FontSize="11" FontWeight="SemiBold">
+
+                <Grid Background="{DynamicResource PanelBgBrush}"/>
+
+            </TabItem>
+
+        </TabControl>
+
+    </Grid>
+
+</UserControl>
+

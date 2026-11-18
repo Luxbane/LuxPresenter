@@ -1,0 +1,269 @@
+<UserControl x:Class="LuxPresenter.Views.Components.ScripturesTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="400" d:DesignWidth="320">
+    <Grid Background="{DynamicResource PanelBgBrush}">
+        <Grid.RowDefinitions>
+            <!-- 1. Top Scripture Search Input: "Scripture" [ Genesis 1:1 ] + [ 📖 Books ] -->
+            <RowDefinition Height="Auto"/>
+            <!-- 2. Chapter Navigation Bar: [ ◀ ] [ Book ] [ Chap ] [ ▶ ] -->
+            <RowDefinition Height="Auto"/>
+            <!-- 3. Verses List -->
+            <RowDefinition Height="*"/>
+            <!-- 4. Bottom Version Tabs Bar (TB, KJV) -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 1. TOP BAR: "Scripture" [ Genesis 1:1 / Yohanes 3:16 ] [ 📖 Books ] -->
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBgBrush}" Padding="6,4" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Scripture" VerticalAlignment="Center" Margin="2,0,8,0" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                <Border Grid.Column="1" BorderBrush="{DynamicResource InputBorderBrush}" BorderThickness="1" Background="{DynamicResource InputBgBrush}" CornerRadius="2">
+                    <TextBox x:Name="SearchBox"
+                             Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             KeyDown="OnSearchBoxKeyDown"
+                             BorderThickness="0"
+                             Padding="4,2" 
+                             FontSize="11" 
+                             VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="4,0,0,0">
+                    <!-- Book Index Quick Button -->
+                    <Button x:Name="BookPickerButton" 
+                            Padding="6,2" 
+                            Height="22"
+                            Background="{DynamicResource ButtonBgBrush}" 
+                            BorderBrush="{DynamicResource ButtonBorderBrush}" 
+                            BorderThickness="1"
+                            Command="{Binding ToggleBookPickerCommand}"
+                            Cursor="Hand"
+                            ToolTip="Quick Book Index (Genesis - Revelation / Kejadian - Wahyu)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📖" FontSize="11" Margin="0,0,3,0"/>
+                            <TextBlock Text="Books" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Import Bible Translation Button -->
+                    <Button Margin="4,0,0,0" 
+                            Padding="6,2" 
+                            Height="22"
+                            Background="{DynamicResource ButtonBgBrush}" 
+                            BorderBrush="{DynamicResource ButtonBorderBrush}" 
+                            BorderThickness="1"
+                            Command="{Binding ImportBibleCommand}"
+                            Cursor="Hand"
+                            ToolTip="Import Bible Translation (.json, e.g. Alkitab TB)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📥" FontSize="11" Margin="0,0,3,0"/>
+                            <TextBlock Text="Import" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Quick Book Picker Popup -->
+                <Popup IsOpen="{Binding IsBookPickerOpen, Mode=TwoWay}"
+                       PlacementTarget="{Binding ElementName=BookPickerButton}"
+                       Placement="Bottom"
+                       StaysOpen="False"
+                       AllowsTransparency="True">
+                    <Border Background="{DynamicResource MenuBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="6" Width="330" MaxHeight="400">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="10" Direction="270" ShadowDepth="3" Opacity="0.3"/>
+                        </Border.Effect>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Select Bible Book" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" Margin="4,2,4,6"/>
+
+                            <TabControl Grid.Row="1" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource BorderBrush}" Background="Transparent">
+                                <!-- Old Testament -->
+                                <TabItem Header="Old Testament" FontSize="10" FontWeight="SemiBold" Padding="8,2">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="300">
+                                        <ItemsControl ItemsSource="{Binding OldTestamentBooks}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Columns="3"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding Name}"
+                                                            Margin="2"
+                                                            Padding="4,3"
+                                                            FontSize="10"
+                                                            Background="{DynamicResource ButtonBgBrush}"
+                                                            BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+                                                            BorderThickness="1"
+                                                            HorizontalContentAlignment="Center"
+                                                            Cursor="Hand"
+                                                            Command="{Binding DataContext.SelectBookCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button">
+                                                                <Style.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" Value="#0078D7"/>
+                                                                        <Setter Property="Foreground" Value="White"/>
+                                                                    </Trigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </TabItem>
+
+                                <!-- New Testament -->
+                                <TabItem Header="New Testament" FontSize="10" FontWeight="SemiBold" Padding="8,2">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="300">
+                                        <ItemsControl ItemsSource="{Binding NewTestamentBooks}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Columns="3"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="{Binding Name}"
+                                                            Margin="2"
+                                                            Padding="4,3"
+                                                            FontSize="10"
+                                                            Background="{DynamicResource ButtonBgBrush}"
+                                                            BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+                                                            BorderThickness="1"
+                                                            HorizontalContentAlignment="Center"
+                                                            Cursor="Hand"
+                                                            Command="{Binding DataContext.SelectBookCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button">
+                                                                <Style.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" Value="#0078D7"/>
+                                                                        <Setter Property="Foreground" Value="White"/>
+                                                                    </Trigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </TabItem>
+                            </TabControl>
+                        </Grid>
+                    </Border>
+                </Popup>
+            </Grid>
+        </Border>
+
+        <!-- 2. CHAPTER NAVIGATION BAR: [ ◀ ] [ Book Dropdown ] [ Chapter ] [ ▶ ] -->
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceBgBrush}" Padding="6,3" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0" Command="{Binding PrevChapterCommand}" Content="◀" Width="22" Height="22" FontSize="9" Margin="0,0,4,0" Cursor="Hand" ToolTip="Previous Chapter"/>
+
+                <ComboBox Grid.Column="1" 
+                          ItemsSource="{Binding Books}" 
+                          SelectedItem="{Binding SelectedBook}" 
+                          DisplayMemberPath="Name" 
+                          Height="22" 
+                          FontSize="11" 
+                          Margin="0,0,4,0"
+                          VerticalContentAlignment="Center"/>
+
+                <ComboBox Grid.Column="2" 
+                          ItemsSource="{Binding AvailableChapters}" 
+                          SelectedItem="{Binding Chapter}" 
+                          Width="54" 
+                          Height="22" 
+                          FontSize="11" 
+                          Margin="0,0,4,0"
+                          VerticalContentAlignment="Center"
+                          ToolTip="Chapter"/>
+
+                <Button Grid.Column="3" Command="{Binding NextChapterCommand}" Content="▶" Width="22" Height="22" FontSize="9" Cursor="Hand" ToolTip="Next Chapter"/>
+            </Grid>
+        </Border>
+
+        <!-- 3. VERSES LIST (Matching Image 1: "1:1 In the beginning...", "1:2 ...") -->
+        <ListBox Grid.Row="2" 
+                 x:Name="VersesListBox"
+                 Background="{DynamicResource ListBgBrush}"
+                 ItemsSource="{Binding Verses}" 
+                 SelectedItem="{Binding SelectedVerse}"
+                 SelectionChanged="OnVersesSelectionChanged"
+                 KeyDown="OnVersesListBoxKeyDown"
+                 BorderThickness="0"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock TextWrapping="Wrap" LineHeight="17" Margin="0,3">
+                        <Run Text="{Binding Chapter}" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <Run Text=":" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <Run Text="{Binding Verse}" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <Run Text=" "/>
+                        <Run Text="{Binding Text}" Foreground="{DynamicResource ListItemTextBrush}"/>
+                    </TextBlock>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Padding" Value="6,2"/>
+                    <Setter Property="FontFamily" Value="Tahoma"/>
+                    <Setter Property="FontSize" Value="11"/>
+                    <EventSetter Event="MouseDoubleClick" Handler="OnVerseItemDoubleClick"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="#0078D7"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
+
+        <!-- 4. BOTTOM VERSION TABS BAR (TB, KJV Only) -->
+        <Border Grid.Row="3" Background="{DynamicResource SurfaceBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+            <DockPanel Margin="2,0,2,0">
+                <!-- Action Icons at right (Book search popup) -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,4,0">
+                    <Button Background="Transparent" BorderThickness="0" Command="{Binding ToggleBookPickerCommand}" Cursor="Hand" ToolTip="Quick Book Index">
+                        <TextBlock Text="📖" FontSize="12" Margin="2,0"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Version Tabs (TB, KJV Only) -->
+                <TabControl BorderThickness="0" Background="Transparent" SelectedValue="{Binding SelectedVersion, Mode=TwoWay}" SelectedValuePath="Tag">
+                    <TabItem Header="TB" Tag="TB" FontSize="11" FontWeight="SemiBold" Padding="12,2"/>
+                    <TabItem Header="KJV" Tag="KJV" FontSize="11" FontWeight="SemiBold" Padding="12,2"/>
+                </TabControl>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,462 @@
+<UserControl x:Class="LuxPresenter.Views.Components.SongsTab"
+
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+
+             mc:Ignorable="d" 
+
+             d:DesignHeight="400" d:DesignWidth="300">
+
+    <Grid Background="{DynamicResource PanelBgBrush}">
+
+        <Grid.RowDefinitions>
+
+            <!-- 1. Top Bar: "Title" [ Search Box ] [ Favorites ] -->
+
+            <RowDefinition Height="Auto"/>
+
+            <!-- 2. Songs List (White, Clean, Column Grid) -->
+
+            <RowDefinition Height="*"/>
+
+            <!-- 3. Bottom Bar: "Search" [ Search Box ] -->
+
+            <RowDefinition Height="Auto"/>
+
+        </Grid.RowDefinitions>
+
+
+
+        <!-- 1. TOP BAR: TITLE SEARCH & FAVORITES BUTTON -->
+
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBgBrush}" Padding="6,4" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+
+                    <ColumnDefinition Width="Auto"/>
+
+                    <ColumnDefinition Width="*"/>
+
+                    <ColumnDefinition Width="Auto"/>
+
+                </Grid.ColumnDefinitions>
+
+
+
+                <TextBlock Grid.Column="0" Text="Title" VerticalAlignment="Center" Margin="2,0,8,0" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+
+
+                <!-- Title Search Box -->
+                <Border Grid.Column="1" BorderBrush="{DynamicResource InputBorderBrush}" BorderThickness="1" Background="{DynamicResource InputBgBrush}">
+                    <TextBox x:Name="TitleSearchTextBox"
+                             BorderThickness="0"
+                             Padding="4,2" 
+                             FontSize="11" 
+                             VerticalAlignment="Center"
+                             PreviewTextInput="OnTitleSearchPreviewTextInput"
+                             PreviewKeyDown="OnTitleSearchPreviewKeyDown"
+                             TextChanged="OnTitleSearchTextChanged"/>
+                </Border>
+
+
+
+                <!-- Favorites Button -->
+
+                <ToggleButton Grid.Column="2" 
+
+                              IsChecked="{Binding FavoritesOnly, Mode=TwoWay}"
+
+                              Content="Favorites" 
+
+                              FontSize="11" 
+
+                              Margin="6,0,0,0" 
+
+                              Padding="8,2"
+
+                              Background="{DynamicResource ButtonBgBrush}" 
+
+                              BorderBrush="{DynamicResource ButtonBorderBrush}"/>
+
+            </Grid>
+
+        </Border>
+
+
+
+        <!-- 2. MAIN SONGS LIST -->
+
+        <ListView x:Name="SongsListView"
+                  Background="{DynamicResource ListBgBrush}"
+                  Grid.Row="1" 
+
+                  ItemsSource="{Binding FilteredSongs}" 
+
+                  SelectedItem="{Binding SelectedSong, Mode=TwoWay}"
+
+                  BorderThickness="0"
+
+                  ScrollViewer.CanContentScroll="True"
+
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+
+                  VirtualizingPanel.IsVirtualizing="True"
+
+                  VirtualizingPanel.VirtualizationMode="Recycling"
+
+                  VirtualizingPanel.ScrollUnit="Pixel"
+
+                  VirtualizingPanel.IsContainerVirtualizable="True"
+
+                  PreviewMouseLeftButtonDown="OnListViewPreviewMouseLeftButtonDown"
+
+                  MouseMove="OnListViewMouseMove"
+
+                  KeyDown="OnListViewKeyDown">
+
+            <ListView.ContextMenu>
+
+                <ContextMenu>
+
+                    <MenuItem Header="➕ Add to Schedule" Command="{Binding AddToScheduleCommand}"/>
+
+                    <MenuItem Header="▶ Go Live" Command="{Binding SendToLiveCommand}"/>
+
+                    <Separator/>
+
+                    <MenuItem Header="✏ Edit Song..." Command="{Binding EditSongCommand}"/>
+
+                    <MenuItem Header="🗑 Delete Song" Command="{Binding DeleteSongCommand}"/>
+
+                </ContextMenu>
+
+            </ListView.ContextMenu>
+
+            <ListView.Resources>
+
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7"/>
+
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#FFFFFF"/>
+
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CBD5E1"/>
+
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1E293B"/>
+
+            </ListView.Resources>
+
+            <ListView.View>
+
+                <GridView>
+
+                    <GridViewColumn Header="Title" Width="200" DisplayMemberBinding="{Binding Title}"/>
+
+                    <GridViewColumn Header="Author" Width="120" DisplayMemberBinding="{Binding Author}"/>
+
+                </GridView>
+
+            </ListView.View>
+
+            <ListView.ItemContainerStyle>
+
+                <Style TargetType="ListViewItem">
+
+                    <Setter Property="Padding" Value="4,2"/>
+
+                    <Setter Property="FontSize" Value="11"/>
+
+                    <Setter Property="FontFamily" Value="Tahoma"/>
+
+                    <Setter Property="SnapsToDevicePixels" Value="True"/>
+
+                    <Setter Property="Background" Value="Transparent"/>
+
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+
+                    <Setter Property="BorderThickness" Value="1"/>
+
+                    <Setter Property="Foreground" Value="{DynamicResource ListItemTextBrush}"/>
+
+                    <EventSetter Event="MouseDoubleClick" Handler="OnSongItemDoubleClick"/>
+
+                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnSongItemClick"/>
+
+                    <Setter Property="Template">
+
+                        <Setter.Value>
+
+                            <ControlTemplate TargetType="ListViewItem">
+
+                                <Border x:Name="Bd"
+
+                                        Background="{TemplateBinding Background}"
+
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+
+                                        Padding="{TemplateBinding Padding}"
+
+                                        CornerRadius="1"
+
+                                        SnapsToDevicePixels="True">
+
+                                    <GridViewRowPresenter VerticalAlignment="Center"/>
+
+                                </Border>
+
+                                <ControlTemplate.Triggers>
+
+                                    <Trigger Property="IsMouseOver" Value="True">
+
+                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ButtonHoverBgBrush}"/>
+
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ButtonHoverBorderBrush}"/>
+
+                                    </Trigger>
+
+                                    <!-- Inactive selection (Gray highlight) -->
+
+                                    <Trigger Property="IsSelected" Value="True">
+
+                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource InactiveSelectionBgBrush}"/>
+
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InactiveSelectionBorderBrush}"/>
+
+                                        <Setter Property="Foreground" Value="{DynamicResource InactiveSelectionTextBrush}"/>
+
+                                    </Trigger>
+
+                                    <!-- Active selection (Solid EW Blue highlight) -->
+
+                                    <MultiDataTrigger>
+
+                                        <MultiDataTrigger.Conditions>
+
+                                            <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
+
+                                            <Condition Binding="{Binding DataContext.IsActive, RelativeSource={RelativeSource AncestorType=ListView}}" Value="True"/>
+
+                                        </MultiDataTrigger.Conditions>
+
+                                        <Setter TargetName="Bd" Property="Background" Value="#0078D7"/>
+
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#005A9E"/>
+
+                                        <Setter Property="Foreground" Value="White"/>
+
+                                    </MultiDataTrigger>
+
+                                </ControlTemplate.Triggers>
+
+                            </ControlTemplate>
+
+                        </Setter.Value>
+
+                    </Setter>
+
+                </Style>
+
+            </ListView.ItemContainerStyle>
+
+        </ListView>
+
+
+
+        <!-- Empty State Helper (Shown when Songs Database is empty) -->
+
+        <Border Grid.Row="1" 
+
+                Background="{DynamicResource SurfaceBgBrush}"
+
+                BorderBrush="{DynamicResource BorderBrush}"
+
+                BorderThickness="1"
+
+                CornerRadius="4"
+
+                Margin="10"
+
+                Padding="12,14"
+
+                VerticalAlignment="Center"
+
+                HorizontalAlignment="Center"
+
+                MaxWidth="300">
+
+            <Border.Style>
+
+                <Style TargetType="Border">
+
+                    <Setter Property="Visibility" Value="Collapsed"/>
+
+                    <Style.Triggers>
+
+                        <DataTrigger Binding="{Binding HasSongs}" Value="False">
+
+                            <Setter Property="Visibility" Value="Visible"/>
+
+                        </DataTrigger>
+
+                    </Style.Triggers>
+
+                </Style>
+
+            </Border.Style>
+
+            <StackPanel HorizontalAlignment="Center">
+
+                <TextBlock Text="📖" FontSize="26" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+
+                <TextBlock Text="Song Library is Empty" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+
+                <TextBlock Text="Import your church's songs or start fresh:" 
+
+                           FontSize="10" 
+
+                           Foreground="#64748B" 
+
+                           TextWrapping="Wrap" 
+
+                           TextAlignment="Center" 
+
+                           Margin="0,3,0,10"/>
+
+
+
+                <Button Content="📥 Import Song Library Backup (.json)" 
+
+                        Command="{Binding ImportSongBackupCommand}" 
+
+                        Background="#0284C7" 
+
+                        Foreground="White" 
+
+                        FontWeight="SemiBold" 
+
+                        FontSize="11" 
+
+                        Padding="10,5" 
+
+                        Margin="0,2" 
+
+                        Cursor="Hand"/>
+
+
+
+                <Button Content="📂 Open Songs Database Folder" 
+
+                        Command="{Binding OpenSongsFolderCommand}" 
+
+                        Background="#FFFFFF" 
+
+                        BorderBrush="#CBD5E1"
+
+                        BorderThickness="1"
+
+                        Foreground="{DynamicResource TextPrimaryBrush}" 
+
+                        FontSize="11" 
+
+                        Padding="10,4" 
+
+                        Margin="0,2" 
+
+                        Cursor="Hand"/>
+
+
+
+                <Button Content="🎵 Load Sample Songs" 
+
+                        Command="{Binding LoadSampleSongsCommand}" 
+
+                        Background="#FFFFFF" 
+
+                        BorderBrush="#CBD5E1"
+
+                        BorderThickness="1"
+
+                        Foreground="{DynamicResource TextPrimaryBrush}" 
+
+                        FontSize="11" 
+
+                        Padding="10,4" 
+
+                        Margin="0,2" 
+
+                        Cursor="Hand"/>
+
+
+
+                <Button Content="➕ Create New Song" 
+
+                        Command="{Binding NewSongCommand}" 
+
+                        Background="#FFFFFF" 
+
+                        BorderBrush="#86EFAC"
+
+                        BorderThickness="1"
+
+                        Foreground="#16A34A" 
+
+                        FontWeight="SemiBold"
+
+                        FontSize="11" 
+
+                        Padding="10,4" 
+
+                        Margin="0,2" 
+
+                        Cursor="Hand"/>
+
+            </StackPanel>
+
+        </Border>
+
+
+
+        <!-- 3. BOTTOM SEARCH BAR (Exact replica of Image 5 bottom bar) -->
+
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceBgBrush}" Padding="6,4" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+
+                    <ColumnDefinition Width="Auto"/>
+
+                    <ColumnDefinition Width="*"/>
+
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Search" VerticalAlignment="Center" Margin="2,0,8,0" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                <Border Grid.Column="1" BorderBrush="{DynamicResource InputBorderBrush}" BorderThickness="1" Background="{DynamicResource InputBgBrush}">
+
+                    <TextBox x:Name="LyricsSearchTextBox"
+                             BorderThickness="0" 
+                             FontSize="11" 
+                             Padding="4,2"
+                             PreviewTextInput="OnLyricsSearchPreviewTextInput"
+                             PreviewKeyDown="OnLyricsSearchPreviewKeyDown"
+                             TextChanged="OnLyricsSearchTextChanged"/>
+
+                </Border>
+
+            </Grid>
+
+        </Border>
+
+    </Grid>
+
+</UserControl>
+

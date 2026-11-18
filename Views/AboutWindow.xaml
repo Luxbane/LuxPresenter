@@ -1,0 +1,105 @@
+﻿<Window x:Class="LuxPresenter.Views.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About LuxPresenter"
+        Icon="/app_icon.png"
+        Width="460" Height="330"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource WindowBgBrush}"
+        FontFamily="Segoe UI, Tahoma">
+    <Grid Margin="20,18,20,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Main Content (Icon + Info) -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- App Logo Icon -->
+            <Border Grid.Column="0" Width="68" Height="68" CornerRadius="12" VerticalAlignment="Top" Margin="0,4,18,0">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" BlurRadius="8" ShadowDepth="2" Opacity="0.35"/>
+                </Border.Effect>
+                <Image Source="/app_icon.png" Width="68" Height="68" RenderOptions.BitmapScalingMode="HighQuality"/>
+            </Border>
+
+            <!-- Details -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                <TextBlock Text="LuxPresenter" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <TextBlock Text="Version 1.0.0" FontSize="11.5" Foreground="#64748B" Margin="0,1,0,3"/>
+                
+                <TextBlock FontSize="12" Margin="0,2,0,2" Foreground="{DynamicResource TextPrimaryBrush}">
+                    <Run Text="Created by "/><Bold>Luxbane</Bold>
+                </TextBlock>
+
+                <!-- Links Section -->
+                <StackPanel Margin="0,4,0,10">
+                    <TextBlock FontSize="12" Margin="0,2">
+                        <Run Text="🌐 itch.io: " Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <Hyperlink NavigateUri="https://luxbane.itch.io/luxpresenter" RequestNavigate="OnHyperlinkClick" Foreground="#0284C7" TextDecorations="None">
+                            https://luxbane.itch.io/luxpresenter
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock FontSize="12" Margin="0,2">
+                        <Run Text="📷 Instagram: " Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <Hyperlink NavigateUri="https://www.instagram.com/luxbane._" RequestNavigate="OnHyperlinkClick" Foreground="#0284C7" TextDecorations="None">
+                            https://www.instagram.com/luxbane._
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock FontSize="12" Margin="0,2">
+                        <Run Text="☕ Ko-fi: " Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <Hyperlink NavigateUri="https://ko-fi.com/luxbane" RequestNavigate="OnHyperlinkClick" Foreground="#0284C7" TextDecorations="None">
+                            https://ko-fi.com/luxbane
+                        </Hyperlink>
+                    </TextBlock>
+                </StackPanel>
+
+                <Separator Background="{DynamicResource BorderBrush}" Margin="0,2,0,10"/>
+
+                <!-- Features & Shortcuts -->
+                <StackPanel Margin="0,0,0,0">
+                    <TextBlock Text="• Dual-display hardware accelerated projector output" 
+                               FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"/>
+                    <TextBlock Text="• Ctrl+C = Clear, Ctrl+B = Black, Space = Go Live" 
+                               FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,2"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <!-- Bottom Action Bar -->
+        <Border Grid.Row="1" Margin="0,14,0,0" Padding="0,10,0,0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+            <DockPanel LastChildFill="False">
+                <Button Content="Support on Ko-fi ☕" 
+                        Height="26" 
+                        Padding="10,2"
+                        DockPanel.Dock="Left"
+                        Click="OnKofiClick"
+                        Background="#FFFBEB" 
+                        Foreground="#B45309"
+                        BorderBrush="#FCD34D" 
+                        FontWeight="SemiBold" 
+                        FontSize="11.5"/>
+
+                <Button Content="OK" 
+                        Width="82" Height="26" 
+                        DockPanel.Dock="Right"
+                        HorizontalAlignment="Right" 
+                        IsDefault="True" 
+                        IsCancel="True"
+                        Click="OnOkClick"
+                        Background="{DynamicResource ButtonBgBrush}" 
+                        BorderBrush="{DynamicResource ButtonBorderBrush}" 
+                        Foreground="{DynamicResource TextPrimaryBrush}" 
+                        FontWeight="SemiBold" 
+                        FontSize="12"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,19 @@
+# ========================================================
+# .gitattributes for LuxPresenter
+# ========================================================
+# Auto detect text files and perform LF normalization on checkin
+* text=auto
+# C# and XAML
+*.cs text diff=csharp
+*.xaml text
+*.csproj text
+*.xml text
+*.json text
+*.md text
+*.iss text
+*.bat text eol=crlf
+# Git Large File Storage (LFS) for binaries > 100MB
+# Note: GitHub hard-blocks files > 100MB without Git LFS (libmpv-2.dll is 115.5 MB)
+libmpv-2.dll filter=lfs diff=lfs merge=lfs -text
+*.7z filter=lfs diff=lfs merge=lfs -text
+*.dll filter=lfs diff=lfs merge=lfs -text
