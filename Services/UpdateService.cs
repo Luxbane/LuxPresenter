@@ -20,7 +20,7 @@ public class GitHubReleaseInfo
 
 public static class UpdateService
 {
-    public const string CurrentVersion = "1.0.0";
+    public const string CurrentVersion = "1.0.1";
     public const string GitHubRepo = "luxbane/LuxPresenter";
     public const string KofiUrl = "https://ko-fi.com/luxbane";
 

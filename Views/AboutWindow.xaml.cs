@@ -10,6 +10,7 @@ public partial class AboutWindow : Window
     public AboutWindow()
     {
         InitializeComponent();
+        TxtVersion.Text = $"Version {Services.UpdateService.CurrentVersion}";
     }
 
     private void OnHyperlinkClick(object sender, RequestNavigateEventArgs e)
