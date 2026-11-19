@@ -68,9 +68,9 @@
 
             <!-- Top Action Buttons (Add, Remove, Hide) -->
             <StackPanel Grid.Column="1">
-                <Button Content="Add" Click="OnAddClicked" Height="23" Margin="0,0,0,4" Background="{DynamicResource ButtonBgBrush}" BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                <Button Content="Remove" Click="OnRemoveClicked" Height="23" Margin="0,0,0,4" Background="{DynamicResource ButtonBgBrush}" BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                <Button x:Name="BtnHide" Content="Hide" Click="OnHideClicked" Height="23" Background="{DynamicResource ButtonBgBrush}" BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <Button Content="Add" Click="OnAddClicked" Height="23" Margin="0,0,0,4"/>
+                <Button Content="Remove" Click="OnRemoveClicked" Height="23" Margin="0,0,0,4"/>
+                <Button x:Name="BtnHide" Content="Hide" Click="OnHideClicked" Height="23"/>
             </StackPanel>
         </Grid>
 
@@ -98,9 +98,9 @@
 
             <!-- Side Buttons -->
             <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                <Button Content="Select Priority" IsEnabled="False" Height="23" Margin="0,0,0,4" Background="{DynamicResource ButtonBgBrush}" BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                <Button Content="Select Next" IsEnabled="False" Height="23" Margin="0,0,0,16" Background="{DynamicResource ButtonBgBrush}" BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                <Button Content="Close" Click="OnCloseClicked" Height="24" Background="{DynamicResource ButtonBgBrush}" BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold"/>
+                <Button Content="Select Priority" IsEnabled="False" Height="23" Margin="0,0,0,4"/>
+                <Button Content="Select Next" IsEnabled="False" Height="23" Margin="0,0,0,16"/>
+                <Button Content="Close" Click="OnCloseClicked" Height="24" FontWeight="SemiBold"/>
             </StackPanel>
         </Grid>
     </Grid>

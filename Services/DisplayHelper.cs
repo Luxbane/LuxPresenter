@@ -52,6 +52,7 @@ public static class DisplayHelper
 
     private static readonly IntPtr HWND_TOP = IntPtr.Zero;
     private static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
+    private static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
     private const uint SWP_NOSIZE = 0x0001;
     private const uint SWP_NOMOVE = 0x0002;
     private const uint SWP_NOACTIVATE = 0x0010;
@@ -230,11 +231,26 @@ public static class DisplayHelper
 
         if (screen.IsPrimary)
         {
-            SetWindowPos(frontHwnd, HWND_TOP, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW | SWP_NOACTIVATE);
-            SetWindowPos(bgHwnd, frontHwnd, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW | SWP_NOACTIVATE);
-            if (Application.Current.MainWindow != null)
+            bgWindow.Topmost = false;
+            frontWindow.Topmost = false;
+
+            var mainWin = Application.Current?.MainWindow;
+            IntPtr mainHwnd = mainWin != null ? new WindowInteropHelper(mainWin).Handle : IntPtr.Zero;
+
+            SetWindowPos(frontHwnd, HWND_NOTOPMOST, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+            SetWindowPos(bgHwnd, HWND_NOTOPMOST, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+
+            if (mainHwnd != IntPtr.Zero)
             {
-                Application.Current.MainWindow.Activate();
+                SetWindowPos(mainHwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                SetWindowPos(frontHwnd, mainHwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                SetWindowPos(bgHwnd, frontHwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                mainWin?.Activate();
+            }
+            else
+            {
+                SetWindowPos(frontHwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                SetWindowPos(bgHwnd, frontHwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
             }
         }
         else
@@ -242,6 +258,27 @@ public static class DisplayHelper
             // Secondary monitor: front on top, bg directly behind front
             SetWindowPos(frontHwnd, HWND_TOP, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW);
             SetWindowPos(bgHwnd, frontHwnd, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+        }
+    }
+
+    /// <summary>
+    /// Explicitly strips the WS_EX_TOPMOST flag from hWnd and places it behind hWndFront (or at HWND_BOTTOM).
+    /// Used when falling back to a single display so the projection window never locks out the user.
+    /// </summary>
+    public static void DemoteFromTopmostAndSendBehind(IntPtr hWnd, IntPtr hWndFront)
+    {
+        if (hWnd != IntPtr.Zero)
+        {
+            SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            if (hWndFront != IntPtr.Zero)
+            {
+                SetWindowPos(hWndFront, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                SetWindowPos(hWnd, hWndFront, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
+            else
+            {
+                SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
         }
     }
 

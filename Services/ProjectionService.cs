@@ -4,7 +4,7 @@ using LuxPresenter.Views;
 
 namespace LuxPresenter.Services;
 
-public class ProjectionService : IProjectionService
+public class ProjectionService : IProjectionService, IDisposable
 {
     private ProjectionWindow? _window;
     public ProjectionState State { get; } = new();
@@ -13,6 +13,44 @@ public class ProjectionService : IProjectionService
 
     public bool IsProjectorConnected => DisplayHelper.GetScreens().Count > 1;
     public int DisplayCount => DisplayHelper.GetScreens().Count;
+
+    public ProjectionService()
+    {
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+    }
+
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e)
+    {
+        Application.Current?.Dispatcher.BeginInvoke(() =>
+        {
+            var screens = DisplayHelper.GetScreens();
+            if (_window != null && _window.IsVisible)
+            {
+                var secondaryScreen = screens.FirstOrDefault(s => !s.IsPrimary);
+                if (secondaryScreen == null)
+                {
+                    // Monitor unplugged: fallback immediately to single monitor mode!
+                    var primary = screens.FirstOrDefault(s => s.IsPrimary) ?? screens.FirstOrDefault();
+                    if (primary != null)
+                    {
+                        _lastPositionedDevice = primary.DeviceName;
+                        _window.HandleFallbackToSingleMonitor(primary);
+                    }
+                }
+                else
+                {
+                    // Monitor plugged back in: restore projection on secondary monitor!
+                    _lastPositionedDevice = null;
+                    ShowProjectionWindow();
+                }
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+    }
 
     public void SeekVideo(double percent)
     {

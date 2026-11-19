@@ -290,7 +290,7 @@
 
 
 
-                    <Button Content="YouTube" Click="OnQuickYouTubeClick" Padding="8,2" FontSize="11" Margin="0,0,6,0" Background="#FFFFFF" BorderBrush="#CBD5E1" Cursor="Hand"/>
+                    <Button Content="YouTube" Click="OnQuickYouTubeClick" Padding="8,2" FontSize="11" Margin="0,0,6,0" Background="{DynamicResource ButtonBgBrush}" BorderBrush="{DynamicResource ButtonBorderBrush}" Foreground="{DynamicResource TextPrimaryBrush}" Cursor="Hand"/>
 
 
 

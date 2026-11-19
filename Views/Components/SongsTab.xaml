@@ -356,9 +356,9 @@
 
                         Command="{Binding OpenSongsFolderCommand}" 
 
-                        Background="#FFFFFF" 
+                        Background="{DynamicResource ButtonBgBrush}" 
 
-                        BorderBrush="#CBD5E1"
+                        BorderBrush="{DynamicResource ButtonBorderBrush}"
 
                         BorderThickness="1"
 
@@ -378,9 +378,9 @@
 
                         Command="{Binding LoadSampleSongsCommand}" 
 
-                        Background="#FFFFFF" 
+                        Background="{DynamicResource ButtonBgBrush}" 
 
-                        BorderBrush="#CBD5E1"
+                        BorderBrush="{DynamicResource ButtonBorderBrush}"
 
                         BorderThickness="1"
 
@@ -400,13 +400,13 @@
 
                         Command="{Binding NewSongCommand}" 
 
-                        Background="#FFFFFF" 
+                        Background="{DynamicResource ButtonBgBrush}" 
 
-                        BorderBrush="#86EFAC"
+                        BorderBrush="#10B981"
 
                         BorderThickness="1"
 
-                        Foreground="#16A34A" 
+                        Foreground="#10B981" 
 
                         FontWeight="SemiBold"
 

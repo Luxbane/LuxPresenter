@@ -93,6 +93,37 @@ public partial class ProjectionWindow : Window
         }
     }
 
+    public void HandleFallbackToSingleMonitor(ScreenInfo primaryScreen)
+    {
+        Topmost = false;
+        if (_bgVideoWindow != null)
+        {
+            _bgVideoWindow.Topmost = false;
+        }
+
+        SyncPositionWithScreen(primaryScreen);
+
+        if (Application.Current?.MainWindow != null)
+        {
+            var mainWin = Application.Current.MainWindow;
+            var mainHwnd = new System.Windows.Interop.WindowInteropHelper(mainWin).Handle;
+            var frontHwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            var bgHwnd = _bgVideoWindow != null ? new System.Windows.Interop.WindowInteropHelper(_bgVideoWindow).Handle : IntPtr.Zero;
+
+            if (bgHwnd != IntPtr.Zero)
+            {
+                DisplayHelper.DemoteFromTopmostAndSendBehind(bgHwnd, IntPtr.Zero);
+            }
+            if (frontHwnd != IntPtr.Zero)
+            {
+                DisplayHelper.DemoteFromTopmostAndSendBehind(frontHwnd, mainHwnd);
+            }
+
+            mainWin.Activate();
+            mainWin.Focus();
+        }
+    }
+
     public void EnsureWindowOrder()
     {
         if (_bgVideoWindow?.IsVisible == true && IsVisible)
@@ -451,6 +482,8 @@ public partial class ProjectionWindow : Window
                 _currentMpvMediaPath = null;
                 _currentActiveBg = null; // Force reload song background!
                 StopMediaElementProgressTimer();
+                StopMpvBackgroundVideo();
+                StopBackgroundVideo();
             }
         }
 

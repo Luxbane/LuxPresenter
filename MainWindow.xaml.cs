@@ -1431,6 +1431,7 @@ public partial class MainWindow : Window
         }
 
         _projectionService.HideProjectionWindow();
+        (_projectionService as IDisposable)?.Dispose();
 
         try
 
