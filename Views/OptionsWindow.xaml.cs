@@ -33,6 +33,27 @@ public partial class OptionsWindow : Window
             CmbMonitors.SelectedIndex = defaultIdx >= 0 ? defaultIdx : 0;
         }
 
+        // Setup Stage Display Monitors
+        var stageMonitorOptions = new List<string> { "Windowed Preview (On Desktop)" };
+        for (int i = 0; i < _screens.Count; i++)
+        {
+            stageMonitorOptions.Add(_screens[i].DisplayName);
+        }
+        CmbStageMonitors.ItemsSource = stageMonitorOptions;
+
+        if (_settings.StageDisplayMonitorIndex >= 0 && _settings.StageDisplayMonitorIndex < _screens.Count)
+        {
+            CmbStageMonitors.SelectedIndex = _settings.StageDisplayMonitorIndex + 1;
+        }
+        else
+        {
+            CmbStageMonitors.SelectedIndex = 0; // Windowed Preview
+        }
+
+        ChkEnableStageDisplay.IsChecked = _settings.EnableStageDisplay;
+        ChkEnableStageWebServer.IsChecked = _settings.EnableStageWebServer;
+        TxtStageUrl.Text = $"http://{StageWebServer.GetLocalIPAddress()}:{_settings.StageWebServerPort}/stage";
+
         RbDarkMode.IsChecked = _settings.IsDarkMode;
         RbLightMode.IsChecked = !_settings.IsDarkMode;
 
@@ -229,6 +250,11 @@ public partial class OptionsWindow : Window
 
         _settings.VideoBackgroundEngine = CmbVideoBgEngine.SelectedIndex == 1 ? "MediaElement" : "libmpv";
 
+        // Stage Display Settings
+        _settings.EnableStageDisplay = ChkEnableStageDisplay.IsChecked == true;
+        _settings.StageDisplayMonitorIndex = CmbStageMonitors.SelectedIndex - 1;
+        _settings.EnableStageWebServer = ChkEnableStageWebServer.IsChecked == true;
+
         _settings.IsDarkMode = RbDarkMode.IsChecked == true;
         ThemeService.ApplyTheme(_settings.IsDarkMode);
 
@@ -237,6 +263,22 @@ public partial class OptionsWindow : Window
 
         DialogResult = true;
         Close();
+    }
+
+    private void OnTestStageDisplayClick(object sender, RoutedEventArgs e)
+    {
+        int stageMonitorIdx = CmbStageMonitors.SelectedIndex - 1;
+        _projectionService.ShowStageDisplayWindow(stageMonitorIdx);
+    }
+
+    private void OnCopyStageUrlClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Clipboard.SetText(TxtStageUrl.Text);
+            MessageBox.Show(this, $"Stage Display URL copied to clipboard:\n{TxtStageUrl.Text}", "Copied", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch { }
     }
 
     private void OnCancelClicked(object sender, RoutedEventArgs e)

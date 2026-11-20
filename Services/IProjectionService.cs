@@ -42,6 +42,13 @@ public class ProjectionState
     public bool SongFontBold { get; set; } = true;
     public int SongFontSize { get; set; } = 13;
     public int SongFontHeightPercent { get; set; } = 14;
+
+    // Stage Display (Confidence Monitor)
+    public Slide? ActiveNextSlide { get; set; }
+    public string ActiveItemTitle { get; set; } = string.Empty;
+    public string StageMessage { get; set; } = string.Empty;
+    public bool IsStageDisplayEnabled { get; set; } = false;
+    public int StageMonitorIndex { get; set; } = -1; // -1 = Windowed Preview
 }
 
 public interface IProjectionService
@@ -50,7 +57,7 @@ public interface IProjectionService
     event Action<ProjectionState>? StateChanged;
     event Action<TimeSpan, TimeSpan>? VideoProgressChanged;
 
-    void SetLiveSlide(Slide? slide, string? background = null);
+    void SetLiveSlide(Slide? slide, string? background = null, Slide? nextSlide = null, string itemTitle = "");
     void SetLiveMedia(string mediaPath, bool playImmediately = true);
     void SetLivePresentation(PresentationDocument doc, int slideIndex);
     void NavigatePresentationSlide(int slideIndex);
@@ -69,6 +76,14 @@ public interface IProjectionService
     void HideProjectionWindow();
     bool IsProjectorConnected { get; }
     int DisplayCount { get; }
+
+    // Stage Display (Confidence Monitor)
+    void ShowStageDisplayWindow(int monitorIndex = -1);
+    void HideStageDisplayWindow();
+    void ToggleStageDisplayWindow();
+    bool IsStageDisplayVisible { get; }
+    void SetStageMessage(string message);
+    void ClearStageMessage();
 
     int SelectedMonitorIndex { get; set; }
     int MarginTop { get; set; }

@@ -59,7 +59,26 @@ public class SlideViewerViewModel : ViewModelBase
     public Slide? CurrentSlide
     {
         get => _currentSlide;
-        set => SetProperty(ref _currentSlide, value);
+        set
+        {
+            if (SetProperty(ref _currentSlide, value))
+            {
+                OnPropertyChanged(nameof(NextSlide));
+            }
+        }
+    }
+
+    public Slide? NextSlide
+    {
+        get
+        {
+            int nextIdx = SelectedIndex + 1;
+            if (nextIdx >= 0 && nextIdx < Slides.Count)
+            {
+                return Slides[nextIdx];
+            }
+            return null;
+        }
     }
 
     public int SelectedIndex
@@ -77,6 +96,7 @@ public class SlideViewerViewModel : ViewModelBase
                 {
                     CurrentSlide = null;
                 }
+                OnPropertyChanged(nameof(NextSlide));
                 SlideChanged?.Invoke(CurrentSlide);
                 if (value >= 0)
                 {

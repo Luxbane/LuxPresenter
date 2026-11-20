@@ -182,6 +182,14 @@ public partial class MainWindow : Window
             return;
         }
 
+        // Ctrl + Shift + D: Toggle Stage Display
+        if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.D)
+        {
+            OnToggleStageDisplayClick(this, new RoutedEventArgs());
+            e.Handled = true;
+            return;
+        }
+
         // Ctrl + B: Black
 
         if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.B)
@@ -434,7 +442,7 @@ public partial class MainWindow : Window
 
                 _viewModel.LiveVM.Background = _viewModel.ActiveGlobalBackground;
 
-                _projectionService.SetLiveSlide(_viewModel.LiveVM.CurrentSlide, _viewModel.LiveVM.Background);
+                _projectionService.SetLiveSlide(_viewModel.LiveVM.CurrentSlide, _viewModel.LiveVM.Background, _viewModel.LiveVM.NextSlide, _viewModel.LiveVM.ItemTitle);
 
             }
 
@@ -1392,6 +1400,97 @@ public partial class MainWindow : Window
             TxtThemeLabel.Text = isDark ? "Light" : "Dark";
             BtnThemeToggle.ToolTip = isDark ? "Switch to Light Mode (Ctrl+T)" : "Switch to Dark Mode (Ctrl+T)";
         }
+    }
+
+    private void OnToggleStageDisplayClick(object sender, RoutedEventArgs e)
+    {
+        _projectionService.ToggleStageDisplayWindow();
+        if (MenuStageDisplayToggle != null)
+        {
+            MenuStageDisplayToggle.IsChecked = _projectionService.IsStageDisplayVisible;
+        }
+    }
+
+    private void OnSendStageMessageClick(object sender, RoutedEventArgs e)
+    {
+        var inputDlg = new Window
+        {
+            Title = "Send Message to Stage Display",
+            Width = 440,
+            Height = 170,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this,
+            ResizeMode = ResizeMode.NoResize,
+            Background = (Brush)FindResource("WindowBgBrush"),
+            FontFamily = (FontFamily)FindResource("AppFont")
+        };
+
+        var grid = new Grid { Margin = new Thickness(16) };
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var lbl = new TextBlock
+        {
+            Text = "Enter stage alert message (visible only to singers/pastor on stage):",
+            Foreground = (Brush)FindResource("TextPrimaryBrush"),
+            FontSize = 11.5,
+            Margin = new Thickness(0, 0, 0, 8)
+        };
+        Grid.SetRow(lbl, 0);
+
+        var txt = new TextBox
+        {
+            Height = 26,
+            FontSize = 12,
+            Text = _projectionService.State.StageMessage
+        };
+        Grid.SetRow(txt, 1);
+
+        var btnPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 12, 0, 0)
+        };
+        Grid.SetRow(btnPanel, 2);
+
+        var btnClear = new Button
+        {
+            Content = "Clear Alert",
+            Width = 90,
+            Height = 26,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        btnClear.Click += (s, ev) =>
+        {
+            _projectionService.ClearStageMessage();
+            inputDlg.Close();
+        };
+
+        var btnSend = new Button
+        {
+            Content = "Send to Stage",
+            Width = 100,
+            Height = 26,
+            IsDefault = true
+        };
+        btnSend.Click += (s, ev) =>
+        {
+            _projectionService.SetStageMessage(txt.Text.Trim());
+            inputDlg.Close();
+        };
+
+        btnPanel.Children.Add(btnClear);
+        btnPanel.Children.Add(btnSend);
+
+        grid.Children.Add(lbl);
+        grid.Children.Add(txt);
+        grid.Children.Add(btnPanel);
+
+        inputDlg.Content = grid;
+        txt.Focus();
+        inputDlg.ShowDialog();
     }
 
     private void OnMenuAboutClick(object sender, RoutedEventArgs e)

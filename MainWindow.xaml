@@ -243,10 +243,18 @@
 
                 <MenuItem Header="Live Output" Command="{Binding LiveToggleCommand}"/>
 
+                <MenuItem Header="Stage Display Output" Click="OnToggleStageDisplayClick"/>
+
+                <Separator/>
+
+                <MenuItem Header="Send Message to Stage..." Click="OnSendStageMessageClick"/>
+
             </MenuItem>
 
             <MenuItem Header="_View">
                 <MenuItem x:Name="MenuThemeToggle" Header="🌙 Dark Mode" InputGestureText="Ctrl+T" Click="OnToggleThemeClick"/>
+                <Separator/>
+                <MenuItem x:Name="MenuStageDisplayToggle" Header="🎭 Stage Display (Confidence Monitor)" InputGestureText="Ctrl+Shift+D" Click="OnToggleStageDisplayClick"/>
             </MenuItem>
 
             <MenuItem Header="_Profiles">

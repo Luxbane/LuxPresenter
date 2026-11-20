@@ -256,6 +256,39 @@
                                     </Grid>
                                 </StackPanel>
                             </Border>
+
+                            <!-- GROUP 3: STAGE DISPLAY (CONFIDENCE MONITOR) -->
+                            <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,10,0,0" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Stage Display (Confidence Monitor)" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+
+                                    <CheckBox x:Name="ChkEnableStageDisplay" Content="Enable Stage Display (Confidence Monitor for stage / singers)" FontSize="11" Margin="0,0,0,8"/>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="1.2*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                            <TextBlock Text="Stage Monitor Output" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                            <ComboBox x:Name="CmbStageMonitors" Height="24" FontSize="11"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" x:Name="BtnTestStageDisplay" Content="Open Preview" Height="24" VerticalAlignment="Bottom" Click="OnTestStageDisplayClick"/>
+                                    </Grid>
+
+                                    <!-- Wireless Web Stage Server -->
+                                    <Border Background="{DynamicResource SurfaceBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,4,0,0">
+                                        <StackPanel>
+                                            <CheckBox x:Name="ChkEnableStageWebServer" Content="Enable Wireless Web Stage Display (for TV browser / iPad / phone)" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                            <TextBlock Text="Connect any device on the church Wi-Fi to this local URL:" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                                            <DockPanel>
+                                                <Button x:Name="BtnCopyStageUrl" Content="Copy URL" Width="70" Height="22" DockPanel.Dock="Right" FontSize="10" Click="OnCopyStageUrlClick"/>
+                                                <TextBox x:Name="TxtStageUrl" Text="http://127.0.0.1:8080/stage" IsReadOnly="True" FontSize="10.5" Height="22" Margin="0,0,6,0" VerticalContentAlignment="Center"/>
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
 

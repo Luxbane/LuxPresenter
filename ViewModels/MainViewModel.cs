@@ -426,7 +426,7 @@ public class MainViewModel : ViewModelBase
 
             // Sync with projector state first so projection window receives new slide immediately
 
-            _projectionService.SetLiveSlide(LiveVM.CurrentSlide, LiveVM.Background);
+            _projectionService.SetLiveSlide(LiveVM.CurrentSlide, LiveVM.Background, LiveVM.NextSlide, LiveVM.ItemTitle);
 
             _projectionService.ShowProjectionWindow();
 
@@ -584,7 +584,7 @@ public class MainViewModel : ViewModelBase
 
             {
 
-                _projectionService.SetLiveSlide(slide, LiveVM.Background);
+                _projectionService.SetLiveSlide(slide, LiveVM.Background, LiveVM.NextSlide, LiveVM.ItemTitle);
 
                 StatusText = $"Live: {LiveVM.ItemTitle} - {slide.Label}";
 
@@ -612,7 +612,7 @@ public class MainViewModel : ViewModelBase
 
         {
 
-            _projectionService.SetLiveSlide(slide, LiveVM.Background);
+            _projectionService.SetLiveSlide(slide, LiveVM.Background, LiveVM.NextSlide, LiveVM.ItemTitle);
 
             StatusText = $"Live: {LiveVM.ItemTitle} - {slide.Label}";
 
@@ -1204,7 +1204,7 @@ public class MainViewModel : ViewModelBase
 
             {
 
-                _projectionService.SetLiveSlide(LiveVM.CurrentSlide, bg);
+                _projectionService.SetLiveSlide(LiveVM.CurrentSlide, bg, LiveVM.NextSlide, LiveVM.ItemTitle);
 
             }
 

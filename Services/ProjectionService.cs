@@ -7,6 +7,8 @@ namespace LuxPresenter.Services;
 public class ProjectionService : IProjectionService, IDisposable
 {
     private ProjectionWindow? _window;
+    private StageDisplayWindow? _stageWindow;
+    private StageWebServer? _stageWebServer;
     public ProjectionState State { get; } = new();
     public event Action<ProjectionState>? StateChanged;
     public event Action<TimeSpan, TimeSpan>? VideoProgressChanged;
@@ -50,6 +52,14 @@ public class ProjectionService : IProjectionService, IDisposable
     public void Dispose()
     {
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+        try
+        {
+            _stageWebServer?.Dispose();
+            _stageWebServer = null;
+            _stageWindow?.Close();
+            _stageWindow = null;
+        }
+        catch { }
     }
 
     public void SeekVideo(double percent)
@@ -63,7 +73,7 @@ public class ProjectionService : IProjectionService, IDisposable
         _window?.SetLooping(isLooping);
     }
 
-    public void SetLiveSlide(Slide? slide, string? background = null)
+    public void SetLiveSlide(Slide? slide, string? background = null, Slide? nextSlide = null, string itemTitle = "")
     {
         State.IsVideoMode = false;
         State.IsVideoPlaying = false;
@@ -73,6 +83,11 @@ public class ProjectionService : IProjectionService, IDisposable
         }
         State.IsPresentationDocMode = false;
         State.ActiveSlide = slide;
+        State.ActiveNextSlide = nextSlide;
+        if (!string.IsNullOrEmpty(itemTitle))
+        {
+            State.ActiveItemTitle = itemTitle;
+        }
         if (!string.IsNullOrEmpty(background))
         {
             State.ActiveBackground = background;
@@ -226,6 +241,34 @@ public class ProjectionService : IProjectionService, IDisposable
         MarginRight = settings.MarginRight;
         _window?.UpdateMargins(MarginTop, MarginBottom, MarginLeft, MarginRight);
 
+        State.IsStageDisplayEnabled = settings.EnableStageDisplay;
+        State.StageMonitorIndex = settings.StageDisplayMonitorIndex;
+
+        // Stage Web Server management
+        if (settings.EnableStageWebServer)
+        {
+            if (_stageWebServer == null)
+            {
+                _stageWebServer = new StageWebServer(State, settings.StageWebServerPort);
+                _stageWebServer.Start();
+            }
+            else if (_stageWebServer.Port != settings.StageWebServerPort)
+            {
+                _stageWebServer.Stop();
+                _stageWebServer.Start(settings.StageWebServerPort);
+            }
+        }
+        else
+        {
+            _stageWebServer?.Stop();
+            _stageWebServer = null;
+        }
+
+        if (settings.EnableStageDisplay && (_stageWindow == null || !_stageWindow.IsVisible))
+        {
+            ShowStageDisplayWindow(settings.StageDisplayMonitorIndex);
+        }
+
         NotifyStateChanged();
     }
 
@@ -280,9 +323,72 @@ public class ProjectionService : IProjectionService, IDisposable
         MemoryHelper.TrimMemoryAsync(300);
     }
 
+    public bool IsStageDisplayVisible => _stageWindow?.IsVisible == true;
+
+    public void ShowStageDisplayWindow(int monitorIndex = -1)
+    {
+        if (_stageWindow == null)
+        {
+            _stageWindow = new StageDisplayWindow();
+            _stageWindow.Closed += (s, e) =>
+            {
+                _stageWindow = null;
+            };
+        }
+
+        var screens = DisplayHelper.GetScreens();
+        if (monitorIndex >= 0 && monitorIndex < screens.Count)
+        {
+            _stageWindow.SyncPositionWithScreen(screens[monitorIndex]);
+        }
+        else
+        {
+            // Windowed preview mode
+            _stageWindow.WindowStyle = WindowStyle.SingleBorderWindow;
+            _stageWindow.ResizeMode = ResizeMode.CanResize;
+            _stageWindow.WindowState = WindowState.Normal;
+        }
+
+        _stageWindow.UpdateState(State);
+        if (!_stageWindow.IsVisible)
+        {
+            _stageWindow.Show();
+        }
+    }
+
+    public void HideStageDisplayWindow()
+    {
+        _stageWindow?.Hide();
+    }
+
+    public void ToggleStageDisplayWindow()
+    {
+        if (_stageWindow?.IsVisible == true)
+        {
+            HideStageDisplayWindow();
+        }
+        else
+        {
+            ShowStageDisplayWindow(State.StageMonitorIndex);
+        }
+    }
+
+    public void SetStageMessage(string message)
+    {
+        State.StageMessage = message;
+        NotifyStateChanged();
+    }
+
+    public void ClearStageMessage()
+    {
+        State.StageMessage = string.Empty;
+        NotifyStateChanged();
+    }
+
     private void NotifyStateChanged()
     {
         _window?.UpdateState(State);
+        _stageWindow?.UpdateState(State);
         StateChanged?.Invoke(State);
     }
 }

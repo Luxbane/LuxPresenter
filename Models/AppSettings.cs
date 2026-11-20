@@ -51,4 +51,12 @@ public class AppSettings
 
     // Video Background Engine: "libmpv" (Experimental / Recommended) or "MediaElement" (Legacy WPF Fallback)
     public string VideoBackgroundEngine { get; set; } = "libmpv";
+
+    // Stage Display (Confidence Monitor) Settings
+    public bool EnableStageDisplay { get; set; } = false;
+    public int StageDisplayMonitorIndex { get; set; } = -1; // -1 = Windowed Preview, 0, 1, 2... = Specific Screen
+    public bool ShowStageNextSlide { get; set; } = true;
+    public bool ShowStageClock { get; set; } = true;
+    public bool EnableStageWebServer { get; set; } = true;
+    public int StageWebServerPort { get; set; } = 8080;
 }
