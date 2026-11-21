@@ -372,7 +372,7 @@ public partial class ProjectionWindow : Window
             _bgVideoWindow?.PauseVideo();
             if (BackgroundVideoElementA.Visibility == Visibility.Visible) BackgroundVideoElementA.Pause();
             if (BackgroundVideoElementB.Visibility == Visibility.Visible) BackgroundVideoElementB.Pause();
-            return;
+            if (ActiveMediaElement.Visibility == Visibility.Visible) ActiveMediaElement.Pause();
         }
         else
         {
@@ -403,6 +403,13 @@ public partial class ProjectionWindow : Window
             }
         }
 
+        bool isHiddenByOverlay = shouldBlack || state.IsLogo;
+        int effectiveDuration = isHiddenByOverlay ? 0 : duration;
+        string effectiveScreenTransition = isHiddenByOverlay ? "Cut" : state.ScreenTransition;
+        string effectiveSongTransition = isHiddenByOverlay ? "Cut" : state.SongTransition;
+        string effectiveSlideTransition = isHiddenByOverlay ? "Cut" : state.SlideTransition;
+        string effectiveMediaTransition = isHiddenByOverlay ? "Cut" : state.MediaTransition;
+
         // Standalone Video Mode (Media Tab Video with Smooth Fade Transition)
         if (state.IsVideoMode && !string.IsNullOrEmpty(state.MediaFilePath) && File.Exists(state.MediaFilePath))
         {
@@ -413,30 +420,32 @@ public partial class ProjectionWindow : Window
                 _currentActiveBg = null; // Force reset active background so returning to song will re-apply properly
                 SetLogoOverlay(false, state.ScreenTransition, duration);
 
-                bool useMediaBlend = string.Equals(state.MediaTransition, "Blend", StringComparison.OrdinalIgnoreCase) ||
-                                     string.Equals(state.SongTransition, "Blend", StringComparison.OrdinalIgnoreCase) ||
-                                     string.Equals(state.ScreenTransition, "Blend", StringComparison.OrdinalIgnoreCase);
+                bool useMediaBlend = (string.Equals(effectiveMediaTransition, "Blend", StringComparison.OrdinalIgnoreCase) ||
+                                     string.Equals(effectiveSongTransition, "Blend", StringComparison.OrdinalIgnoreCase) ||
+                                     string.Equals(effectiveScreenTransition, "Blend", StringComparison.OrdinalIgnoreCase)) && effectiveDuration > 0;
 
                 StopBackgroundVideo();
                 RootGrid.Background = Brushes.Transparent;
 
-                if (useMediaBlend && duration > 0 && !_isFirstRender)
+                bool isPlaying = shouldBlack ? false : state.IsVideoPlaying;
+
+                if (useMediaBlend && effectiveDuration > 0 && !_isFirstRender)
                 {
-                    PlayMediaOnProjector(state.MediaFilePath, state.IsVideoPlaying, duration);
-                    AnimateFade(SlideContentGridA, SlideContentGridA.Opacity, 0.0, duration);
-                    AnimateFade(SlideContentGridB, SlideContentGridB.Opacity, 0.0, duration);
+                    PlayMediaOnProjector(state.MediaFilePath, isPlaying, effectiveDuration);
+                    AnimateFade(SlideContentGridA, SlideContentGridA.Opacity, 0.0, effectiveDuration);
+                    AnimateFade(SlideContentGridB, SlideContentGridB.Opacity, 0.0, effectiveDuration);
                     if (BackgroundImageA.Source != null && BackgroundImageA.Opacity > 0.01)
                     {
-                        AnimateFade(BackgroundImageA, BackgroundImageA.Opacity, 0.0, duration, () => BackgroundImageA.Source = null);
+                        AnimateFade(BackgroundImageA, BackgroundImageA.Opacity, 0.0, effectiveDuration, () => BackgroundImageA.Source = null);
                     }
                     if (BackgroundImageB.Source != null && BackgroundImageB.Opacity > 0.01)
                     {
-                        AnimateFade(BackgroundImageB, BackgroundImageB.Opacity, 0.0, duration, () => BackgroundImageB.Source = null);
+                        AnimateFade(BackgroundImageB, BackgroundImageB.Opacity, 0.0, effectiveDuration, () => BackgroundImageB.Source = null);
                     }
                 }
                 else
                 {
-                    PlayMediaOnProjector(state.MediaFilePath, state.IsVideoPlaying, 0);
+                    PlayMediaOnProjector(state.MediaFilePath, isPlaying, 0);
                     SlideContentGridA.BeginAnimation(UIElement.OpacityProperty, null);
                     SlideContentGridB.BeginAnimation(UIElement.OpacityProperty, null);
                     BackgroundImageA.BeginAnimation(UIElement.OpacityProperty, null);
@@ -452,23 +461,29 @@ public partial class ProjectionWindow : Window
             else
             {
                 // Already in video mode, handle play/pause or new media
+                bool isPlaying = shouldBlack ? false : state.IsVideoPlaying;
                 if (_currentMpvMediaPath != state.MediaFilePath)
                 {
-                    PlayMediaOnProjector(state.MediaFilePath, state.IsVideoPlaying, duration);
+                    PlayMediaOnProjector(state.MediaFilePath, isPlaying, effectiveDuration);
                 }
                 else
                 {
                     if (string.Equals(_videoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (state.IsVideoPlaying) _bgVideoWindow?.ResumeVideo();
+                        if (isPlaying) _bgVideoWindow?.ResumeVideo();
                         else _bgVideoWindow?.PauseVideo();
                     }
                     else
                     {
-                        if (state.IsVideoPlaying) ActiveMediaElement.Play();
+                        if (isPlaying) ActiveMediaElement.Play();
                         else ActiveMediaElement.Pause();
                     }
                 }
+            }
+            if (shouldBlack)
+            {
+                _bgVideoWindow?.PauseVideo();
+                ActiveMediaElement.Pause();
             }
             _isFirstRender = false;
             return;
@@ -489,7 +504,6 @@ public partial class ProjectionWindow : Window
 
         // 2. Logo overlay
         SetLogoOverlay(state.IsLogo, state.ScreenTransition, duration);
-        if (state.IsLogo) return;
 
         // Presentation Document Mode
         if (state.IsPresentationDocMode && _activeLiveDoc != null)
@@ -504,7 +518,14 @@ public partial class ProjectionWindow : Window
         }
 
         // 3. Background Color / Image / Video (with smooth blend transition)
-        ApplyBackground(state.ActiveBackground, state.SongTransition, duration);
+        ApplyBackground(state.ActiveBackground, effectiveSongTransition, effectiveDuration);
+        if (shouldBlack)
+        {
+            _bgVideoWindow?.PauseVideo();
+            if (BackgroundVideoElementA.Visibility == Visibility.Visible) BackgroundVideoElementA.Pause();
+            if (BackgroundVideoElementB.Visibility == Visibility.Visible) BackgroundVideoElementB.Pause();
+            if (ActiveMediaElement.Visibility == Visibility.Visible) ActiveMediaElement.Pause();
+        }
 
         // 4. Clear text mode (Blend in/out for Clear)
         bool wasCleared = _isCurrentlyClear;
@@ -513,10 +534,10 @@ public partial class ProjectionWindow : Window
             if (!_isCurrentlyClear || SlideContentGridA.Opacity > 0.01 || SlideContentGridB.Opacity > 0.01)
             {
                 _isCurrentlyClear = true;
-                if (string.Equals(state.ScreenTransition, "Blend", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(effectiveScreenTransition, "Blend", StringComparison.OrdinalIgnoreCase) && effectiveDuration > 0)
                 {
-                    AnimateFade(SlideContentGridA, SlideContentGridA.Opacity, 0.0, duration);
-                    AnimateFade(SlideContentGridB, SlideContentGridB.Opacity, 0.0, duration);
+                    AnimateFade(SlideContentGridA, SlideContentGridA.Opacity, 0.0, effectiveDuration);
+                    AnimateFade(SlideContentGridB, SlideContentGridB.Opacity, 0.0, effectiveDuration);
                 }
                 else
                 {
@@ -542,10 +563,10 @@ public partial class ProjectionWindow : Window
         if (slide == null)
         {
             // Slide removed / blank -> fade both layers out (Blend Out)
-            if (string.Equals(state.SlideTransition, "Blend", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(effectiveSlideTransition, "Blend", StringComparison.OrdinalIgnoreCase) && effectiveDuration > 0)
             {
-                AnimateFade(SlideContentGridA, SlideContentGridA.Opacity, 0.0, duration);
-                AnimateFade(SlideContentGridB, SlideContentGridB.Opacity, 0.0, duration);
+                AnimateFade(SlideContentGridA, SlideContentGridA.Opacity, 0.0, effectiveDuration);
+                AnimateFade(SlideContentGridB, SlideContentGridB.Opacity, 0.0, effectiveDuration);
             }
             else
             {
@@ -694,17 +715,17 @@ public partial class ProjectionWindow : Window
         Panel.SetZIndex(outgoingGrid, 1);
 
         bool isInitial = _isFirstRender || !IsLoaded;
-        bool useBlend = (string.Equals(state.SlideTransition, "Blend", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(state.SongTransition, "Blend", StringComparison.OrdinalIgnoreCase)) && !isInitial;
+        bool useBlend = (string.Equals(effectiveSlideTransition, "Blend", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(effectiveSongTransition, "Blend", StringComparison.OrdinalIgnoreCase)) && !isInitial && effectiveDuration > 0;
 
-        if (useBlend && duration > 0)
+        if (useBlend && effectiveDuration > 0)
         {
             incomingGrid.Opacity = 0.0;
             double curOut = wasCleared ? 0.0 : (outgoingGrid.Opacity > 0.05 ? outgoingGrid.Opacity : 1.0);
-            AnimateFade(incomingGrid, 0.0, 1.0, duration);
+            AnimateFade(incomingGrid, 0.0, 1.0, effectiveDuration);
             if (curOut > 0.01)
             {
-                AnimateFade(outgoingGrid, curOut, 0.0, duration);
+                AnimateFade(outgoingGrid, curOut, 0.0, effectiveDuration);
             }
             else
             {

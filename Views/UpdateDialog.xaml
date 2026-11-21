@@ -28,7 +28,7 @@
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <TextBlock Text="New Version Available!" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                <TextBlock x:Name="TxtVersionSub" Text="Current: v1.1.0 → New: v1.1.1" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                <TextBlock x:Name="TxtVersionSub" Text="Current: v1.1.1 → New: v1.1.2" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
             </StackPanel>
         </Grid>
 
