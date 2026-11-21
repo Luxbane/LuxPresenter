@@ -29,7 +29,7 @@ public static class UpdateService
         Timeout = TimeSpan.FromSeconds(10)
     };
 
-    public static async Task CheckForUpdatesAsync(Window? owner = null, bool silent = false)
+    public static async Task CheckForUpdatesAsync(Window? owner = null, bool silent = false, bool forceShowDialog = false)
     {
         try
         {
@@ -48,7 +48,7 @@ public static class UpdateService
                 return;
             }
 
-            if (IsNewerVersion(CurrentVersion, release.TagName))
+            if (forceShowDialog || IsNewerVersion(CurrentVersion, release.TagName))
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {

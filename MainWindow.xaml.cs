@@ -1371,7 +1371,9 @@ public partial class MainWindow : Window
 
     private async void OnCheckUpdatesClick(object sender, RoutedEventArgs e)
     {
-        await UpdateService.CheckForUpdatesAsync(this, silent: false);
+        bool force = System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.LeftShift) ||
+                     System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.RightShift);
+        await UpdateService.CheckForUpdatesAsync(this, silent: false, forceShowDialog: force);
     }
 
     private void OnDonateKofiClick(object sender, RoutedEventArgs e)
