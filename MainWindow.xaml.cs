@@ -31,19 +31,22 @@ public partial class MainWindow : Window
 
 
 
-    public MainWindow()
+    public MainWindow(Action<double, string>? startupProgress = null)
 
     {
 
         InitializeComponent();
+        startupProgress?.Invoke(58, "Loading application interface...");
 
 
 
         _dataService = new DataService();
+        startupProgress?.Invoke(68, "Loading songs, media, presentations, and Bible data...");
 
         _projectionService = new ProjectionService();
 
         _viewModel = new MainViewModel(_dataService, _projectionService);
+        startupProgress?.Invoke(82, "Preparing preview and live output...");
 
 
 
@@ -92,6 +95,7 @@ public partial class MainWindow : Window
 
         // Clean up orphaned presentation caches, media, and thumbnails on startup
         CleanupOrphanedData();
+        startupProgress?.Invoke(92, "Cleaning temporary presentation data...");
 
 
 

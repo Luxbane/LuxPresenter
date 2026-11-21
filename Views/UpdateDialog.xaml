@@ -3,9 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Software Update"
         Icon="/app_icon.png"
-        Width="480" Height="360"
+        Width="520" Height="400"
+        MinWidth="460" MinHeight="320"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False"
         Background="{DynamicResource WindowBgBrush}"
         FontFamily="Segoe UI, Tahoma">
@@ -27,21 +28,25 @@
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <TextBlock Text="New Version Available!" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                <TextBlock x:Name="TxtVersionSub" Text="Current: v1.0.0 → New: v1.0.1" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                <TextBlock x:Name="TxtVersionSub" Text="Current: v1.1.0 → New: v1.1.1" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
             </StackPanel>
         </Grid>
 
         <!-- Changelog / Release Notes -->
-        <Border Grid.Row="1" Background="{DynamicResource InputBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <TextBox x:Name="TxtChangelog"
-                         TextWrapping="Wrap"
-                         IsReadOnly="True"
-                         BorderThickness="0"
-                         Background="Transparent"
-                         FontSize="12"
-                         Foreground="{DynamicResource TextPrimaryBrush}"/>
-            </ScrollViewer>
+        <Border Grid.Row="1" Background="{DynamicResource InputBgBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12,10">
+            <FlowDocumentScrollViewer x:Name="DocViewerChangelog"
+                                      IsToolBarVisible="False"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      Foreground="{DynamicResource TextPrimaryBrush}">
+                <FlowDocument Background="Transparent" 
+                              PagePadding="0" 
+                              FontFamily="Segoe UI, Tahoma" 
+                              FontSize="12" 
+                              ColumnWidth="999999"/>
+            </FlowDocumentScrollViewer>
         </Border>
 
         <!-- Buttons -->

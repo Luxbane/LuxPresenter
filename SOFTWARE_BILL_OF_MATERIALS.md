@@ -1,7 +1,7 @@
 # Software Bill of Materials (SBOM)
 
 **Product:** LuxPresenter  
-**Version:** 1.0.1  
+**Version:** 1.1.1  
 **Target Framework:** .NET 10.0 Windows (`net10.0-windows`)  
 **Architecture:** x64  
 **Date of Audit:** 2026-11-06  

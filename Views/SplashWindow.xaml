@@ -1,0 +1,88 @@
+<Window x:Class="LuxPresenter.Views.SplashWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="LuxPresenter"
+        Width="620"
+        Height="360"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterScreen"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowActivated="True">
+    <Border CornerRadius="14"
+            Background="#071426"
+            BorderBrush="#1F4B73"
+            BorderThickness="1"
+            SnapsToDevicePixels="True">
+        <Border.Effect>
+            <DropShadowEffect Color="#000000" BlurRadius="24" ShadowDepth="8" Opacity="0.45"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#050A14" Offset="0"/>
+                    <GradientStop Color="#081C35" Offset="0.58"/>
+                    <GradientStop Color="#063A61" Offset="1"/>
+                </LinearGradientBrush>
+            </Grid.Background>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Width="430">
+                <Border Width="92" Height="92" HorizontalAlignment="Center" CornerRadius="18" Background="#102B49" Padding="10" Margin="0,0,0,18">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#000000" BlurRadius="12" ShadowDepth="3" Opacity="0.4"/>
+                    </Border.Effect>
+                    <Image Source="/app_icon.png" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                </Border>
+
+                <TextBlock Text="LuxPresenter"
+                           HorizontalAlignment="Center"
+                           Foreground="#F8FAFC"
+                           FontFamily="Segoe UI"
+                           FontSize="28"
+                           FontWeight="SemiBold"/>
+                <TextBlock Text="Starting your presentation workspace"
+                           HorizontalAlignment="Center"
+                           Foreground="#93C5FD"
+                           FontFamily="Segoe UI"
+                           FontSize="12"
+                           Margin="0,4,0,24"/>
+
+                <ProgressBar x:Name="LoadingProgress"
+                             Height="7"
+                             Minimum="0"
+                             Maximum="100"
+                             Value="0"
+                             Foreground="#38BDF8"
+                             Background="#173653"
+                             BorderThickness="0"/>
+                <TextBlock x:Name="LoadingStatus"
+                           Text="Starting application..."
+                           Foreground="#D7E8F7"
+                           FontFamily="Segoe UI"
+                           FontSize="12"
+                           Margin="0,10,0,0"/>
+            </StackPanel>
+
+            <DockPanel Grid.Row="1" Margin="26,0,26,18" LastChildFill="False">
+                <TextBlock Text="LuxPresenter"
+                           DockPanel.Dock="Left"
+                           Foreground="#6EA6D1"
+                           FontFamily="Segoe UI"
+                           FontSize="10"/>
+                <TextBlock Text="Please wait..."
+                           DockPanel.Dock="Right"
+                           Foreground="#6EA6D1"
+                           FontFamily="Segoe UI"
+                           FontSize="10"/>
+            </DockPanel>
+        </Grid>
+    </Border>
+</Window>

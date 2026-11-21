@@ -7,7 +7,7 @@
 [![itch.io](https://img.shields.io/badge/Download%20on-itch.io-FA5C5C.svg?logo=itchdotio&logoColor=white)](https://luxbane.itch.io/luxpresenter)
 [![Ko-fi](https://img.shields.io/badge/Support-Ko--fi-FF5E5B.svg?logo=kofi&logoColor=white)](https://ko-fi.com/luxbane)
 
-A high-performance, modern church presentation and worship projection software built with C# and WPF on .NET 10, developed and crafted with **Gemini 3.8 Flash**.
+A high-performance, modern church presentation and worship projection software built with C# and WPF on .NET 10, developed and crafted with **Gemini 3.8 Flash & GPT 5.6 Luna**.
 
 Designed as an intuitive, fast, and open alternative for church media operators and worship teams.
 
@@ -18,6 +18,7 @@ Designed as an intuitive, fast, and open alternative for church media operators 
 ## Key Features
 
 * **Dual Display Architecture:** Clean separation of Operator Control Window and Multi-Display Live Projector Output with smooth blend transitions.
+* **Stage Display / Confidence Monitor:** Support for a 3rd stage screen (`Ctrl+Shift+D`) and wireless Web Stage Display (`http://<ip>:8080/stage`) accessible from any browser, smartphone, tablet, or stage TV over Wi-Fi.
 * **Song & Hymn Library:** Searchable database with verse/chorus detection, live lyrics formatting, customizable font size, outlines, text shadow, and alignment controls.
 * **Open Song Management & Portability:** Native song database management with open JSON backup, import, and export.
 * **Presentation Engine (PowerPoint & PDF):** Bundled portable LibreOffice Impress engine combined with Google PDFium and SkiaSharp for slide rendering and smooth multi-screen projection of PPTX, PPT, ODP, and PDF presentations.
