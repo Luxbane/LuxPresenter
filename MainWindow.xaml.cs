@@ -33,6 +33,8 @@ public partial class MainWindow : Window
 
     private readonly KeyboardShortcutService _keyboardShortcuts;
 
+    private readonly DialogService _dialogService;
+
 
 
     public MainWindow(Action<double, string>? startupProgress = null)
@@ -46,6 +48,7 @@ public partial class MainWindow : Window
 
         _dataService = new DataService();
         _cleanupService = new StartupCleanupService(_dataService);
+        _dialogService = new DialogService();
         startupProgress?.Invoke(68, "Loading songs, media, presentations, and Bible data...");
 
         _projectionService = new ProjectionService();
@@ -162,95 +165,47 @@ public partial class MainWindow : Window
 
 
     private void OnOpenSongEditorRequested(Song? song)
-
     {
-
-        var editor = new SongEditorWindow(song)
-
+        var resultSong = _dialogService.ShowSongEditor(this, song);
+        if (resultSong != null)
         {
+            _dataService.SaveSong(resultSong);
+            _viewModel.SongsVM.ReloadSongs(resultSong.Id);
 
-            Owner = this
-
-        };
-
-
-
-        if (editor.ShowDialog() == true && editor.ResultSong != null)
-
-        {
-
-            _dataService.SaveSong(editor.ResultSong);
-
-            _viewModel.SongsVM.ReloadSongs(editor.ResultSong.Id);
-
-
-
-            var updatedPres = editor.ResultSong.ToPresentationItem(_viewModel.ActiveGlobalBackground);
-
-
+            var updatedPres = resultSong.ToPresentationItem(_viewModel.ActiveGlobalBackground);
 
             // Update Preview immediately if Preview was showing this song
-
-            if (_viewModel.PreviewVM.ItemTitle.Equals(editor.ResultSong.Title, StringComparison.OrdinalIgnoreCase) ||
-
+            if (_viewModel.PreviewVM.ItemTitle.Equals(resultSong.Title, StringComparison.OrdinalIgnoreCase) ||
                 (song != null && _viewModel.PreviewVM.ItemTitle.Equals(song.Title, StringComparison.OrdinalIgnoreCase)))
-
             {
-
                 int curIdx = _viewModel.PreviewVM.SelectedIndex;
-
                 _viewModel.PreviewVM.LoadItem(updatedPres, curIdx);
-
                 _viewModel.PreviewVM.Background = _viewModel.ActiveGlobalBackground;
-
             }
-
-
 
             // Update Live immediately if Live was showing this song
-
-            if (_viewModel.LiveVM.ItemTitle.Equals(editor.ResultSong.Title, StringComparison.OrdinalIgnoreCase) ||
-
+            if (_viewModel.LiveVM.ItemTitle.Equals(resultSong.Title, StringComparison.OrdinalIgnoreCase) ||
                 (song != null && _viewModel.LiveVM.ItemTitle.Equals(song.Title, StringComparison.OrdinalIgnoreCase)))
-
             {
-
                 int curIdx = _viewModel.LiveVM.SelectedIndex;
-
                 _viewModel.LiveVM.LoadItem(updatedPres, curIdx);
-
                 _viewModel.LiveVM.Background = _viewModel.ActiveGlobalBackground;
-
                 _projectionService.SetLiveSlide(_viewModel.LiveVM.CurrentSlide, _viewModel.LiveVM.Background, _viewModel.LiveVM.NextSlide, _viewModel.LiveVM.ItemTitle);
-
             }
-
-
 
             // Also update Schedule items matching this song if present
-
             foreach (var item in _viewModel.ScheduleVM.Items)
-
             {
-
-                if (item.Title.Equals(editor.ResultSong.Title, StringComparison.OrdinalIgnoreCase) ||
-
+                if (item.Title.Equals(resultSong.Title, StringComparison.OrdinalIgnoreCase) ||
                     (song != null && item.Title.Equals(song.Title, StringComparison.OrdinalIgnoreCase)))
-
                 {
-
-                    item.Title = editor.ResultSong.Title;
-
+                    item.Title = resultSong.Title;
                     item.Presentation = updatedPres.Clone();
-
                 }
-
             }
-
         }
 
         MemoryHelper.TrimMemoryAsync(300);
-
     }
 
 
@@ -296,93 +251,36 @@ public partial class MainWindow : Window
 
 
     private void OnOpenOptionsRequested()
-
     {
-
-        var options = new OptionsWindow(_projectionService, _dataService)
-
+        if (_dialogService.ShowOptions(this, _projectionService, _dataService))
         {
-
-            Owner = this
-
-        };
-
-
-
-        if (options.ShowDialog() == true)
-
-        {
-
             var settings = _dataService.GetSettings();
-
             _viewModel.UpdateSettings(settings);
-
             _viewModel.SongsVM.ReloadSongs();
-
             PreviewPaneView.ApplyFormatting(settings);
-
             LivePaneView.ApplyFormatting(settings);
-
             _projectionService.UpdateSettings(settings);
-
             UpdateStageMenuState();
-
             _viewModel.ReloadCurrentPresentation();
-
         }
 
         MemoryHelper.TrimMemoryAsync(300);
-
     }
 
-
-
     private void OnBackgroundBtnClick(object sender, RoutedEventArgs e)
-
     {
-
         // Get preview text from current preview slide for the dialog monitor preview
-
         var previewText = _viewModel.PreviewVM.CurrentSlide?.Content
-
                        ?? _viewModel.PreviewVM.ItemTitle
-
                        ?? string.Empty;
-
-
-
         var currentBg = _viewModel.PreviewVM.Background;
 
-
-
-        var dlg = new BackgroundOptionsWindow(_dataService, previewText, currentBg)
-
+        var (accepted, bg, applyToLive) = _dialogService.ShowBackgroundDialog(this, _dataService, previewText, currentBg);
+        if (accepted && bg != null)
         {
-
-            Owner = this
-
-        };
-
-
-
-        if (dlg.ShowDialog() == true && dlg.SelectedBackground != null)
-
-        {
-
-            var bg = !string.IsNullOrWhiteSpace(dlg.SelectedBackground.FilePath)
-
-                ? dlg.SelectedBackground.FilePath
-
-                : dlg.SelectedBackground.HexColor;
-
-
-
             // Apply global background to Preview, persist, and update Live ONLY if explicitly requested
-
-            _viewModel.SetActiveBackground(bg, dlg.IsPreviewLiveOutputChecked);
-
+            _viewModel.SetActiveBackground(bg, applyToLive);
         }
-
     }
 
 
@@ -452,33 +350,18 @@ public partial class MainWindow : Window
 
 
     private void OnClearScheduleClick(object sender, RoutedEventArgs e)
-
     {
-
         if (_viewModel.ScheduleVM.Items.Count == 0) return;
 
-
-
-        var result = MessageBox.Show(
-
+        var result = _dialogService.ShowConfirmation(
+            this,
             "Are you sure you want to clear the schedule?",
-
-            "Clear Schedule",
-
-            MessageBoxButton.YesNo,
-
-            MessageBoxImage.Question);
-
-
+            "Clear Schedule");
 
         if (result == MessageBoxResult.Yes)
-
         {
-
             _viewModel.ScheduleVM.ClearSchedule();
-
         }
-
     }
 
 
@@ -506,207 +389,92 @@ public partial class MainWindow : Window
 
 
     public bool OpenSchedule()
-
     {
-
         if (!PromptSaveIfModified())
-
         {
-
             return false;
-
         }
 
-
-
-        var dlg = new Microsoft.Win32.OpenFileDialog
-
+        var fileName = _dialogService.ShowOpenScheduleDialog(this);
+        if (fileName != null)
         {
-
-            Title = "Open Schedule",
-
-            Filter = "LuxPresenter Schedule (*.lps)|*.lps|Legacy FreeWorship Schedule (*.fws)|*.fws|JSON Schedule (*.json)|*.json|All Files (*.*)|*.*",
-
-            DefaultExt = ".lps"
-
-        };
-
-
-
-        if (dlg.ShowDialog(this) == true)
-
-        {
-
             try
-
             {
-
-                _viewModel.ScheduleVM.LoadFromFile(dlg.FileName);
-
+                _viewModel.ScheduleVM.LoadFromFile(fileName);
                 return true;
-
             }
-
             catch (Exception ex)
-
             {
-
-                MessageBox.Show($"Failed to open schedule: {ex.Message}", "LuxPresenter", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                _dialogService.ShowError(this, $"Failed to open schedule: {ex.Message}");
                 return false;
-
             }
-
         }
-
-
 
         return false;
-
     }
 
 
 
     public bool SaveSchedule(bool saveAs = false)
-
     {
-
         if (saveAs || string.IsNullOrWhiteSpace(_viewModel.ScheduleVM.CurrentScheduleFilePath))
-
         {
-
-            var dlg = new Microsoft.Win32.SaveFileDialog
-
+            var fileName = _dialogService.ShowSaveScheduleDialog(this, _viewModel.ScheduleVM.CurrentScheduleFilePath);
+            if (fileName != null)
             {
-
-                Title = "Save Schedule",
-
-                Filter = "LuxPresenter Schedule (*.lps)|*.lps|Legacy FreeWorship Schedule (*.fws)|*.fws|JSON Schedule (*.json)|*.json|All Files (*.*)|*.*",
-
-                DefaultExt = ".lps",
-
-                FileName = string.IsNullOrWhiteSpace(_viewModel.ScheduleVM.CurrentScheduleFilePath)
-
-                    ? $"Schedule_{DateTime.Now:yyyyMMdd}.lps"
-
-                    : (System.IO.Path.GetExtension(_viewModel.ScheduleVM.CurrentScheduleFilePath).Equals(".fws", StringComparison.OrdinalIgnoreCase)
-                        ? System.IO.Path.ChangeExtension(System.IO.Path.GetFileName(_viewModel.ScheduleVM.CurrentScheduleFilePath), ".lps")
-                        : System.IO.Path.GetFileName(_viewModel.ScheduleVM.CurrentScheduleFilePath))
-
-            };
-
-
-
-            if (dlg.ShowDialog(this) == true)
-
-            {
-
                 try
-
                 {
-
-                    _viewModel.ScheduleVM.SaveToFile(dlg.FileName);
-
+                    _viewModel.ScheduleVM.SaveToFile(fileName);
                     return true;
-
                 }
-
                 catch (Exception ex)
-
                 {
-
-                    MessageBox.Show($"Failed to save schedule: {ex.Message}", "LuxPresenter", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                    _dialogService.ShowError(this, $"Failed to save schedule: {ex.Message}");
                     return false;
-
                 }
-
             }
-
             return false;
-
         }
-
         else
-
         {
-
             try
-
             {
-
                 _viewModel.ScheduleVM.SaveToFile(_viewModel.ScheduleVM.CurrentScheduleFilePath);
-
                 return true;
-
             }
-
             catch (Exception ex)
-
             {
-
-                MessageBox.Show($"Failed to save schedule: {ex.Message}", "LuxPresenter", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                _dialogService.ShowError(this, $"Failed to save schedule: {ex.Message}");
                 return false;
-
             }
-
         }
-
     }
 
-
-
     private bool PromptSaveIfModified()
-
     {
-
         if (!_viewModel.ScheduleVM.HasUnsavedChanges || _viewModel.ScheduleVM.Items.Count == 0)
-
         {
-
             return true;
-
         }
 
-
-
-        var result = MessageBox.Show(
-
+        var result = _dialogService.ShowConfirmation(
+            this,
             "Do you want to save changes to the current Schedule?",
-
             "LuxPresenter",
-
-            MessageBoxButton.YesNoCancel,
-
-            MessageBoxImage.Question);
-
-
+            MessageBoxButton.YesNoCancel);
 
         if (result == MessageBoxResult.Yes)
-
         {
-
             return SaveSchedule(false);
-
         }
-
         else if (result == MessageBoxResult.No)
-
         {
-
             return true;
-
         }
-
         else
-
         {
-
             return false;
-
         }
-
     }
 
 
@@ -771,355 +539,154 @@ public partial class MainWindow : Window
 
 
     private void OnOpenSongsFolderClick(object sender, RoutedEventArgs e)
-
     {
-
         try
-
         {
-
             string dir = AppPaths.SongsDirectory;
-
             if (!System.IO.Directory.Exists(dir))
-
             {
-
                 System.IO.Directory.CreateDirectory(dir);
-
             }
-
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-
             {
-
                 FileName = dir,
-
                 UseShellExecute = true
-
             });
-
         }
-
         catch (Exception ex)
-
         {
-
-            MessageBox.Show($"Failed to open Songs folder: {ex.Message}", "LuxPresenter", MessageBoxButton.OK, MessageBoxImage.Error);
-
+            _dialogService.ShowError(this, $"Failed to open Songs folder: {ex.Message}");
         }
-
     }
-
-
 
     private void OnChangeSongsFolderClick(object sender, RoutedEventArgs e)
-
     {
-
-        var dlg = new Microsoft.Win32.OpenFolderDialog
-
+        var folderName = _dialogService.ShowSelectFolderDialog(this, "Select Songs Database Folder", AppPaths.SongsDirectory);
+        if (folderName != null)
         {
-
-            Title = "Select Songs Database Folder",
-
-            InitialDirectory = AppPaths.SongsDirectory
-
-        };
-
-
-
-        if (dlg.ShowDialog(this) == true)
-
-        {
-
             try
-
             {
-
-                _dataService.SwitchSongsDirectory(dlg.FolderName);
-
+                _dataService.SwitchSongsDirectory(folderName);
                 _viewModel.SongsVM.ReloadSongs();
-
-                MessageBox.Show(
-
-                    $"Songs database folder successfully changed to:\n{dlg.FolderName}\n\nLoaded {_dataService.GetSongs().Count} songs.",
-
-                    "Songs Database Location",
-
-                    MessageBoxButton.OK,
-
-                    MessageBoxImage.Information);
-
+                _dialogService.ShowInformation(
+                    this,
+                    $"Songs database folder successfully changed to:\n{folderName}\n\nLoaded {_dataService.GetSongs().Count} songs.",
+                    "Songs Database Location");
             }
-
             catch (Exception ex)
-
             {
-
-                MessageBox.Show($"Failed to switch database folder: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                _dialogService.ShowError(this, $"Failed to switch database folder: {ex.Message}", "Error");
             }
-
         }
-
     }
 
-
-
     private void OnLoadSampleSongsClick(object sender, RoutedEventArgs e)
-
     {
-
-        var res = MessageBox.Show(
-
+        var res = _dialogService.ShowConfirmation(
+            this,
             "Load default sample songs into your library?\n\nThis will add sample worship songs to your library.",
-
-            "Load Sample Songs",
-
-            MessageBoxButton.YesNo,
-
-            MessageBoxImage.Question);
-
-
+            "Load Sample Songs");
 
         if (res == MessageBoxResult.Yes)
-
         {
-
             _dataService.LoadSampleSongs();
-
             _viewModel.SongsVM.ReloadSongs();
-
-            MessageBox.Show("Sample songs loaded successfully!", "LuxPresenter", MessageBoxButton.OK, MessageBoxImage.Information);
-
+            _dialogService.ShowInformation(this, "Sample songs loaded successfully!");
         }
-
     }
 
 
 
     private void OnExportSongBackupClick(object sender, RoutedEventArgs e)
-
     {
-
         var songs = _dataService.GetSongs();
-
-        var dlg = new Microsoft.Win32.SaveFileDialog
-
+        var fileName = _dialogService.ShowExportSongBackupDialog(this);
+        if (fileName != null)
         {
-
-            Title = "Export Songs Profile (Backup)",
-
-            Filter = "LuxPresenter Songs Backup (*.json)|*.json|JSON Files (*.json)|*.json|All Files (*.*)|*.*",
-
-            FileName = "LuxPresenter_Songs_Backup.json",
-
-            DefaultExt = ".json"
-
-        };
-
-
-
-        if (dlg.ShowDialog(this) == true)
-
-        {
-
             try
-
             {
-
-                SongImportExportService.ExportSongsToJson(dlg.FileName, songs);
-
-                MessageBox.Show(
-
-                    $"Successfully exported {songs.Count} songs to:\n{dlg.FileName}",
-
-                    "Export Songs Backup",
-
-                    MessageBoxButton.OK,
-
-                    MessageBoxImage.Information);
-
+                SongImportExportService.ExportSongsToJson(fileName, songs);
+                _dialogService.ShowInformation(
+                    this,
+                    $"Successfully exported {songs.Count} songs to:\n{fileName}",
+                    "Export Songs Backup");
             }
-
             catch (Exception ex)
-
             {
-
-                MessageBox.Show($"Failed to export songs:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                _dialogService.ShowError(this, $"Failed to export songs:\n{ex.Message}", "Export Error");
             }
-
         }
-
     }
-
-
 
     private void OnImportSongBackupClick(object sender, RoutedEventArgs e)
-
     {
-
-        var dlg = new Microsoft.Win32.OpenFileDialog
-
+        var fileName = _dialogService.ShowImportSongBackupDialog(this);
+        if (fileName != null)
         {
-
-            Title = "Import Songs Profile (Backup)",
-
-            Filter = "LuxPresenter Songs Backup (*.json)|*.json|JSON Files (*.json)|*.json|All Files (*.*)|*.*",
-
-            DefaultExt = ".json"
-
-        };
-
-
-
-        if (dlg.ShowDialog(this) == true)
-
-        {
-
             try
-
             {
-
-                var imported = SongImportExportService.ImportSongsFromJson(dlg.FileName);
-
+                var imported = SongImportExportService.ImportSongsFromJson(fileName);
                 if (imported.Count == 0)
-
                 {
-
-                    MessageBox.Show("No songs found in the selected file.", "Import Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-
+                    _dialogService.ShowWarning(this, "No songs found in the selected file.", "Import Error");
                     return;
-
                 }
 
-
-
-                var res = MessageBox.Show(
-
+                var res = _dialogService.ShowConfirmation(
+                    this,
                     $"Found {imported.Count} songs in this backup profile.\n\n" +
-
                     "• Click [Yes] to Merge with your existing songs.\n" +
-
                     "• Click [No] to Replace all current songs with this backup.\n" +
-
                     "• Click [Cancel] to abort.",
-
                     "Import Songs Backup",
-
-                    MessageBoxButton.YesNoCancel,
-
-                    MessageBoxImage.Question);
-
-
+                    MessageBoxButton.YesNoCancel);
 
                 if (res == MessageBoxResult.Yes)
-
                 {
-
                     _dataService.AddSongs(imported, replaceAll: false);
-
                     _viewModel.SongsVM.ReloadSongs();
-
-                    MessageBox.Show($"Successfully merged {imported.Count} songs into your library!", "Import Complete", MessageBoxButton.OK, MessageBoxImage.Information);
-
+                    _dialogService.ShowInformation(this, $"Successfully merged {imported.Count} songs into your library!", "Import Complete");
                 }
-
                 else if (res == MessageBoxResult.No)
-
                 {
-
                     _dataService.AddSongs(imported, replaceAll: true);
-
                     _viewModel.SongsVM.ReloadSongs();
-
-                    MessageBox.Show($"Successfully replaced library with {imported.Count} songs from backup!", "Import Complete", MessageBoxButton.OK, MessageBoxImage.Information);
-
+                    _dialogService.ShowInformation(this, $"Successfully replaced library with {imported.Count} songs from backup!", "Import Complete");
                 }
-
             }
-
             catch (Exception ex)
-
             {
-
-                MessageBox.Show($"Failed to import songs backup:\n{ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                _dialogService.ShowError(this, $"Failed to import songs backup:\n{ex.Message}", "Import Error");
             }
-
         }
-
     }
 
-
-
     private void OnImportBibleClick(object sender, RoutedEventArgs e)
-
     {
-
-        var dlg = new Microsoft.Win32.OpenFileDialog
-
+        var fileName = _dialogService.ShowImportBibleDialog(this);
+        if (fileName != null)
         {
-
-            Title = "Import Bible Translation (.json)",
-
-            Filter = "Bible Translation JSON (*.json)|*.json|All Files (*.*)|*.*",
-
-            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-
-        };
-
-
-
-        if (dlg.ShowDialog(this) == true)
-
-        {
-
             try
-
             {
-
-                int count = _dataService.ImportBible(dlg.FileName);
-
+                int count = _dataService.ImportBible(fileName);
                 if (count > 0)
-
                 {
-
                     _viewModel.ScripturesVM.RefreshAfterBibleImport("TB");
-
-                    MessageBox.Show(
-
+                    _dialogService.ShowInformation(
+                        this,
                         $"Successfully imported Bible translation with {count:N0} verses!\n\nTranslation is now permanently installed and ready for church presentation.",
-
-                        "Import Complete",
-
-                        MessageBoxButton.OK,
-
-                        MessageBoxImage.Information);
-
+                        "Import Complete");
                 }
-
                 else
-
                 {
-
-                    MessageBox.Show("No valid Bible verses could be extracted from the selected JSON file.", "Import Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-
+                    _dialogService.ShowWarning(this, "No valid Bible verses could be extracted from the selected JSON file.", "Import Warning");
                 }
-
             }
-
             catch (Exception ex)
-
             {
-
-                MessageBox.Show($"Failed to import Bible file:\n{ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                _dialogService.ShowError(this, $"Failed to import Bible file:\n{ex.Message}", "Import Error");
             }
-
         }
-
     }
 
 
@@ -1197,110 +764,33 @@ public partial class MainWindow : Window
         if (isRunning)
         {
             string url = $"http://{StageWebServer.GetLocalIPAddress()}:{settings.StageWebServerPort}/stage";
-            MessageBox.Show($"Web Stage Display is now ACTIVE!\n\nMusicians and speakers can connect via:\n{url}", "Web Stage Display (Port 8080)", MessageBoxButton.OK, MessageBoxImage.Information);
+            _dialogService.ShowInformation(this, $"Web Stage Display is now ACTIVE!\n\nMusicians and speakers can connect via:\n{url}", "Web Stage Display (Port 8080)");
         }
         else
         {
-            MessageBox.Show("Web Stage Display has been STOPPED.\nPort 8080 is now closed.", "Web Stage Display (Port 8080)", MessageBoxButton.OK, MessageBoxImage.Information);
+            _dialogService.ShowInformation(this, "Web Stage Display has been STOPPED.\nPort 8080 is now closed.", "Web Stage Display (Port 8080)");
         }
     }
 
     private void OnSendStageMessageClick(object sender, RoutedEventArgs e)
     {
-        var inputDlg = new Window
+        var (confirmed, message, clear) = _dialogService.ShowSendStageMessageDialog(this, _projectionService.State.StageMessage);
+        if (confirmed)
         {
-            Title = "Send Message to Stage Display",
-            Width = 440,
-            Height = 170,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Owner = this,
-            ResizeMode = ResizeMode.NoResize,
-            Background = (Brush)FindResource("WindowBgBrush"),
-            FontFamily = (FontFamily)FindResource("AppFont")
-        };
-
-        var grid = new Grid { Margin = new Thickness(16) };
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-        var lbl = new TextBlock
-        {
-            Text = "Enter stage alert message (visible only to singers/pastor on stage):",
-            Foreground = (Brush)FindResource("TextPrimaryBrush"),
-            FontSize = 11.5,
-            Margin = new Thickness(0, 0, 0, 8)
-        };
-        Grid.SetRow(lbl, 0);
-
-        var txt = new TextBox
-        {
-            Height = 26,
-            FontSize = 12,
-            Text = _projectionService.State.StageMessage
-        };
-        Grid.SetRow(txt, 1);
-
-        var btnPanel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Margin = new Thickness(0, 12, 0, 0)
-        };
-        Grid.SetRow(btnPanel, 2);
-
-        var btnClear = new Button
-        {
-            Content = "Clear Alert",
-            Width = 90,
-            Height = 26,
-            Margin = new Thickness(0, 0, 8, 0)
-        };
-        btnClear.Click += (s, ev) =>
-        {
-            _projectionService.ClearStageMessage();
-            inputDlg.Close();
-        };
-
-        var btnSend = new Button
-        {
-            Content = "Send to Stage",
-            Width = 100,
-            Height = 26,
-            IsDefault = true
-        };
-        btnSend.Click += (s, ev) =>
-        {
-            _projectionService.SetStageMessage(txt.Text.Trim());
-            inputDlg.Close();
-        };
-
-        btnPanel.Children.Add(btnClear);
-        btnPanel.Children.Add(btnSend);
-
-        grid.Children.Add(lbl);
-        grid.Children.Add(txt);
-        grid.Children.Add(btnPanel);
-
-        inputDlg.Content = grid;
-        txt.Focus();
-        inputDlg.ShowDialog();
+            if (clear)
+            {
+                _projectionService.ClearStageMessage();
+            }
+            else
+            {
+                _projectionService.SetStageMessage(message);
+            }
+        }
     }
 
     private void OnMenuAboutClick(object sender, RoutedEventArgs e)
-
     {
-
-        var dlg = new AboutWindow
-
-        {
-
-            Owner = this
-
-        };
-
-        dlg.ShowDialog();
-
+        _dialogService.ShowAbout(this);
     }
 
 
