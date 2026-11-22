@@ -31,6 +31,8 @@ public partial class MainWindow : Window
 
     private readonly StartupCleanupService _cleanupService;
 
+    private readonly KeyboardShortcutService _keyboardShortcuts;
+
 
 
     public MainWindow(Action<double, string>? startupProgress = null)
@@ -145,9 +147,16 @@ public partial class MainWindow : Window
 
 
 
-        // Keyboard navigation shortcuts (Using PreviewKeyDown so Space and PageDown aren't swallowed by focused buttons/lists)
-
-        PreviewKeyDown += OnMainWindowPreviewKeyDown;
+        // Keyboard navigation shortcuts
+        _keyboardShortcuts = new KeyboardShortcutService(
+            _viewModel,
+            toggleTheme: () => OnToggleThemeClick(this, new RoutedEventArgs()),
+            toggleStageDisplay: () => OnToggleStageDisplayClick(this, new RoutedEventArgs()),
+            newSchedule: () => NewSchedule(),
+            openSchedule: () => OpenSchedule(),
+            saveSchedule: (saveAs) => SaveSchedule(saveAs)
+        );
+        _keyboardShortcuts.Attach(this);
 
 
 
@@ -171,224 +180,6 @@ public partial class MainWindow : Window
             await System.Threading.Tasks.Task.Delay(3500);
             await UpdateService.CheckForUpdatesAsync(this, silent: true);
         };
-
-    }
-
-
-
-    private void OnMainWindowPreviewKeyDown(object sender, KeyEventArgs e)
-
-    {
-
-        // Don't intercept shortcuts if user is typing text in an input box (except Ctrl shortcuts if not copying)
-
-        var isTypingInTextBox = e.OriginalSource is TextBox || Keyboard.FocusedElement is TextBox;
-
-
-
-        // Ctrl + T: Toggle Dark / Light Mode
-        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.T)
-        {
-            OnToggleThemeClick(this, new RoutedEventArgs());
-            e.Handled = true;
-            return;
-        }
-
-        // Ctrl + Shift + D: Toggle Stage Display
-        if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.D)
-        {
-            OnToggleStageDisplayClick(this, new RoutedEventArgs());
-            e.Handled = true;
-            return;
-        }
-
-        // Ctrl + B: Black
-
-        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.B)
-
-        {
-
-            _viewModel.BlackCommand.Execute(null);
-
-            e.Handled = true;
-
-            return;
-
-        }
-
-
-
-        // Ctrl + S / Ctrl + Shift + S: Save Schedule
-
-        if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.S)
-
-        {
-
-            SaveSchedule(true);
-
-            e.Handled = true;
-
-            return;
-
-        }
-
-        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.S)
-
-        {
-
-            SaveSchedule(false);
-
-            e.Handled = true;
-
-            return;
-
-        }
-
-
-
-        // Ctrl + O: Open Schedule
-
-        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.O)
-
-        {
-
-            OpenSchedule();
-
-            e.Handled = true;
-
-            return;
-
-        }
-
-
-
-        // Ctrl + N: New Schedule
-
-        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.N)
-
-        {
-
-            NewSchedule();
-
-            e.Handled = true;
-
-            return;
-
-        }
-
-
-
-        // Ctrl + C: Clear (When NOT selecting text in an active TextBox)
-
-        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.C)
-
-        {
-
-            if (isTypingInTextBox && e.OriginalSource is TextBox tb && tb.SelectionLength > 0)
-
-            {
-
-                // Standard copy behavior
-
-                return;
-
-            }
-
-
-
-            _viewModel.ClearCommand.Execute(null);
-
-            e.Handled = true;
-
-            return;
-
-        }
-
-
-
-        // If user is focused inside a search box, don't hijack Space, Enter, or Arrow keys
-
-        if (isTypingInTextBox) return;
-
-
-
-        switch (e.Key)
-        {
-            // Go Live: F5
-            case Key.F5:
-                _viewModel.GoLiveCommand.Execute(null);
-                e.Handled = true;
-                break;
-
-            // Black toggle: F6 or Period (.) from presenter remote
-            case Key.F6:
-            case Key.OemPeriod:
-                _viewModel.BlackCommand.Execute(null);
-                e.Handled = true;
-                break;
-
-            // Clear toggle: F7
-            case Key.F7:
-                _viewModel.ClearCommand.Execute(null);
-                e.Handled = true;
-                break;
-
-            // Logo toggle: F8
-            case Key.F8:
-                _viewModel.LogoCommand.Execute(null);
-                e.Handled = true;
-                break;
-
-            // Advance live slide: PageDown, Space, Down Arrow, Right Arrow (Supports presenter remotes)
-            case Key.PageDown:
-            case Key.Space:
-            case Key.Down:
-            case Key.Right:
-                _viewModel.LiveVM.NextSlideCommand.Execute(null);
-                e.Handled = true;
-                break;
-
-
-
-            // Previous live slide: Up Arrow, Left Arrow, PageUp (Always operates on Live output / right preview)
-
-            case Key.Up:
-
-            case Key.Left:
-
-            case Key.PageUp:
-
-                _viewModel.LiveVM.PrevSlideCommand.Execute(null);
-
-                e.Handled = true;
-
-                break;
-
-
-
-            // First slide (Top): Home
-
-            case Key.Home:
-
-                _viewModel.LiveVM.SelectFirstSlide();
-
-                e.Handled = true;
-
-                break;
-
-
-
-            // Last slide (Bottom): End
-
-            case Key.End:
-
-                _viewModel.LiveVM.SelectLastSlide();
-
-                e.Handled = true;
-
-                break;
-
-        }
 
     }
 
@@ -1567,6 +1358,7 @@ public partial class MainWindow : Window
 
         catch { }
 
+        _keyboardShortcuts?.Detach();
         Application.Current.Shutdown();
 
     }
