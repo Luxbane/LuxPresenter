@@ -3,6 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![Built With: Gemini 3.8 Flash](https://img.shields.io/badge/Built%20With-Gemini%203.8%20Flash-4E75F6.svg?logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![Built With: GPT 5.6 Luna](https://img.shields.io/badge/Built%20With-GPT%205.6%20Luna-10A37F.svg?logo=openai&logoColor=white)](https://openai.com/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-0078D6.svg)](https://github.com/luxbane/LuxPresenter)
 [![itch.io](https://img.shields.io/badge/Download%20on-itch.io-FA5C5C.svg?logo=itchdotio&logoColor=white)](https://luxbane.itch.io/luxpresenter)
 [![Ko-fi](https://img.shields.io/badge/Support-Ko--fi-FF5E5B.svg?logo=kofi&logoColor=white)](https://ko-fi.com/luxbane)
