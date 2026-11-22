@@ -86,6 +86,12 @@ public interface IProjectionService
     void SetStageMessage(string message);
     void ClearStageMessage();
 
+    // Stage Web Server (Wi-Fi / Port 8080)
+    bool IsStageWebServerRunning { get; }
+    void StartStageWebServer(int port = 8080);
+    void StopStageWebServer();
+    bool ToggleStageWebServer(int port = 8080);
+
     int SelectedMonitorIndex { get; set; }
     int MarginTop { get; set; }
     int MarginBottom { get; set; }

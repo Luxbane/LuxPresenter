@@ -425,6 +425,43 @@ public class ProjectionService : IProjectionService, IDisposable
         NotifyStateChanged();
     }
 
+    // Stage Web Server (Wi-Fi / Port 8080)
+    public bool IsStageWebServerRunning => _stageWebServer?.IsRunning == true;
+
+    public void StartStageWebServer(int port = 8080)
+    {
+        if (_stageWebServer == null)
+        {
+            _stageWebServer = new StageWebServer(State, port);
+            _stageWebServer.Start();
+        }
+        else if (!_stageWebServer.IsRunning || _stageWebServer.Port != port)
+        {
+            _stageWebServer.Stop();
+            _stageWebServer.Start(port);
+        }
+    }
+
+    public void StopStageWebServer()
+    {
+        _stageWebServer?.Stop();
+        _stageWebServer = null;
+    }
+
+    public bool ToggleStageWebServer(int port = 8080)
+    {
+        if (IsStageWebServerRunning)
+        {
+            StopStageWebServer();
+            return false;
+        }
+        else
+        {
+            StartStageWebServer(port);
+            return true;
+        }
+    }
+
     private void NotifyStateChanged()
     {
         _window?.UpdateState(State);

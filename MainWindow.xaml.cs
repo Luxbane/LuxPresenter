@@ -92,6 +92,7 @@ public partial class MainWindow : Window
         _projectionService.UpdateSettings(initialSettings);
 
         UpdateThemeUI(initialSettings.IsDarkMode);
+        UpdateStageMenuState();
 
         // Clean up orphaned presentation caches, media, and thumbnails on startup
         CleanupOrphanedData();
@@ -553,6 +554,8 @@ public partial class MainWindow : Window
             LivePaneView.ApplyFormatting(settings);
 
             _projectionService.UpdateSettings(settings);
+
+            UpdateStageMenuState();
 
             _viewModel.ReloadCurrentPresentation();
 
@@ -1418,6 +1421,39 @@ public partial class MainWindow : Window
         if (MenuStageDisplayToggle != null)
         {
             MenuStageDisplayToggle.IsChecked = _projectionService.IsStageDisplayVisible;
+        }
+    }
+
+    private void UpdateStageMenuState()
+    {
+        bool isRunning = _projectionService.IsStageWebServerRunning;
+        if (MenuWebStageServerToggle != null)
+        {
+            MenuWebStageServerToggle.IsChecked = isRunning;
+        }
+        if (MenuViewWebStageServerToggle != null)
+        {
+            MenuViewWebStageServerToggle.IsChecked = isRunning;
+        }
+    }
+
+    private void OnToggleWebStageServerClick(object sender, RoutedEventArgs e)
+    {
+        var settings = _dataService.GetSettings();
+        bool isRunning = _projectionService.ToggleStageWebServer(settings.StageWebServerPort);
+        settings.EnableStageWebServer = isRunning;
+        _dataService.SaveSettings(settings);
+
+        UpdateStageMenuState();
+
+        if (isRunning)
+        {
+            string url = $"http://{StageWebServer.GetLocalIPAddress()}:{settings.StageWebServerPort}/stage";
+            MessageBox.Show($"Web Stage Display is now ACTIVE!\n\nMusicians and speakers can connect via:\n{url}", "Web Stage Display (Port 8080)", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        else
+        {
+            MessageBox.Show("Web Stage Display has been STOPPED.\nPort 8080 is now closed.", "Web Stage Display (Port 8080)", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 

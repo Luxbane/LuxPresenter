@@ -245,6 +245,8 @@
 
                 <MenuItem Header="Stage Display Output" Click="OnToggleStageDisplayClick"/>
 
+                <MenuItem x:Name="MenuWebStageServerToggle" Header="🌐 Web Stage Display (Wi-Fi)" IsCheckable="True" Click="OnToggleWebStageServerClick"/>
+
                 <Separator/>
 
                 <MenuItem Header="Send Message to Stage..." Click="OnSendStageMessageClick"/>
@@ -255,6 +257,7 @@
                 <MenuItem x:Name="MenuThemeToggle" Header="🌙 Dark Mode" InputGestureText="Ctrl+T" Click="OnToggleThemeClick"/>
                 <Separator/>
                 <MenuItem x:Name="MenuStageDisplayToggle" Header="🎭 Stage Display (Confidence Monitor)" InputGestureText="Ctrl+Shift+D" Click="OnToggleStageDisplayClick"/>
+                <MenuItem x:Name="MenuViewWebStageServerToggle" Header="🌐 Web Stage Display (Port 8080)" IsCheckable="True" Click="OnToggleWebStageServerClick"/>
             </MenuItem>
 
             <MenuItem Header="_Profiles">

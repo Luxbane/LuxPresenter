@@ -57,6 +57,6 @@ public class AppSettings
     public int StageDisplayMonitorIndex { get; set; } = -1; // -1 = Windowed Preview, 0, 1, 2... = Specific Screen
     public bool ShowStageNextSlide { get; set; } = true;
     public bool ShowStageClock { get; set; } = true;
-    public bool EnableStageWebServer { get; set; } = true;
+    public bool EnableStageWebServer { get; set; } = false;
     public int StageWebServerPort { get; set; } = 8080;
 }
