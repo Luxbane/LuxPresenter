@@ -549,9 +549,9 @@ public partial class MainWindow : Window
 
             Title = "Open Schedule",
 
-            Filter = "LuxPresenter Schedule (*.lps;*.fws)|*.lps;*.fws|JSON Schedule (*.json)|*.json|All Files (*.*)|*.*",
+            Filter = "LuxPresenter Schedule (*.lps)|*.lps|Legacy FreeWorship Schedule (*.fws)|*.fws|JSON Schedule (*.json)|*.json|All Files (*.*)|*.*",
 
-            DefaultExt = ".fws"
+            DefaultExt = ".lps"
 
         };
 
@@ -605,15 +605,17 @@ public partial class MainWindow : Window
 
                 Title = "Save Schedule",
 
-                Filter = "LuxPresenter Schedule (*.lps;*.fws)|*.lps;*.fws|JSON Schedule (*.json)|*.json|All Files (*.*)|*.*",
+                Filter = "LuxPresenter Schedule (*.lps)|*.lps|Legacy FreeWorship Schedule (*.fws)|*.fws|JSON Schedule (*.json)|*.json|All Files (*.*)|*.*",
 
-                DefaultExt = ".fws",
+                DefaultExt = ".lps",
 
                 FileName = string.IsNullOrWhiteSpace(_viewModel.ScheduleVM.CurrentScheduleFilePath)
 
-                    ? $"Schedule_{DateTime.Now:yyyyMMdd}.fws"
+                    ? $"Schedule_{DateTime.Now:yyyyMMdd}.lps"
 
-                    : System.IO.Path.GetFileName(_viewModel.ScheduleVM.CurrentScheduleFilePath)
+                    : (System.IO.Path.GetExtension(_viewModel.ScheduleVM.CurrentScheduleFilePath).Equals(".fws", StringComparison.OrdinalIgnoreCase)
+                        ? System.IO.Path.ChangeExtension(System.IO.Path.GetFileName(_viewModel.ScheduleVM.CurrentScheduleFilePath), ".lps")
+                        : System.IO.Path.GetFileName(_viewModel.ScheduleVM.CurrentScheduleFilePath))
 
             };
 
