@@ -29,6 +29,8 @@ public partial class MainWindow : Window
 
     private readonly IProjectionService _projectionService;
 
+    private readonly StartupCleanupService _cleanupService;
+
 
 
     public MainWindow(Action<double, string>? startupProgress = null)
@@ -41,6 +43,7 @@ public partial class MainWindow : Window
 
 
         _dataService = new DataService();
+        _cleanupService = new StartupCleanupService(_dataService);
         startupProgress?.Invoke(68, "Loading songs, media, presentations, and Bible data...");
 
         _projectionService = new ProjectionService();
@@ -95,7 +98,7 @@ public partial class MainWindow : Window
         UpdateStageMenuState();
 
         // Clean up orphaned presentation caches, media, and thumbnails on startup
-        CleanupOrphanedData();
+        _cleanupService.CleanupOrphanedData();
         startupProgress?.Invoke(90, "Cleaning temporary presentation data...");
 
         // Pre-warm hardware acceleration, DirectX pipeline, and font rasterization
@@ -956,7 +959,7 @@ public partial class MainWindow : Window
         catch { }
 
         // Clean up orphaned presentation caches, media, and thumbnails on shutdown
-        CleanupOrphanedData();
+        _cleanupService.CleanupOrphanedData();
 
         if (!_isShuttingDown)
         {
@@ -987,30 +990,6 @@ public partial class MainWindow : Window
     }
 
 
-
-    private void CleanupOrphanedData()
-    {
-        try
-        {
-            // 1. Presentation caches
-            var activeDocs = _dataService.GetPresentationDocs().Select(d => d.FilePath);
-            LuxPresenter.Services.Presentation.PresentationEngineService.CleanupOrphanedCaches(activeDocs);
-
-            // 2. Media and Backgrounds missing from disk
-            _dataService.CleanupOrphanedMedia();
-
-            // 3. Thumbnails cache cleanup (delete any thumbnail not belonging to active media/backgrounds)
-            var activeMedia = _dataService.GetMediaItems().Select(m => m.FilePath);
-            var activeBackgrounds = _dataService.GetBackgrounds().Select(b => b.FilePath);
-            var defaultBg = _dataService.GetSettings().LastUsedBackground;
-            var allActivePaths = activeMedia.Concat(activeBackgrounds);
-            if (!string.IsNullOrWhiteSpace(defaultBg))
-                allActivePaths = allActivePaths.Append(defaultBg);
-
-            LuxPresenter.Services.ThumbnailService.CleanupOrphanedThumbnails(allActivePaths);
-        }
-        catch { }
-    }
 
     private void OnMenuExitClick(object sender, RoutedEventArgs e)
 
