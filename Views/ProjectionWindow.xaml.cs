@@ -382,8 +382,17 @@ public partial class ProjectionWindow : Window
         _videoBackgroundEngine = state.VideoBackgroundEngine ?? "libmpv";
         int duration = state.TransitionDurationMs > 0 ? state.TransitionDurationMs : 250;
 
+        // If Live output is completely turned off, keep projection and background windows hidden!
+        if (!state.IsLive)
+        {
+            _bgVideoWindow?.PauseVideo();
+            _bgVideoWindow?.Hide();
+            Hide();
+            return;
+        }
+
         // 1. Black overlay
-        bool shouldBlack = !state.IsLive || state.IsBlack;
+        bool shouldBlack = state.IsBlack;
         SetBlackOverlay(shouldBlack, state.ScreenTransition, duration);
 
         if (shouldBlack)
@@ -929,7 +938,7 @@ public partial class ProjectionWindow : Window
                     if (useBlend && durationMs > 0)
                     {
                         RootGrid.Background = Brushes.Transparent;
-                        if (_bgVideoWindow != null)
+                        if (_bgVideoWindow != null && IsVisible && (_lastState?.IsLive ?? true))
                         {
                             if (!_bgVideoWindow.IsVisible) _bgVideoWindow.Show();
                             _bgVideoWindow.PlayBackgroundVideo(bg, durationMs);
@@ -941,7 +950,7 @@ public partial class ProjectionWindow : Window
                     else
                     {
                         RootGrid.Background = Brushes.Transparent;
-                        if (_bgVideoWindow != null)
+                        if (_bgVideoWindow != null && IsVisible && (_lastState?.IsLive ?? true))
                         {
                             if (!_bgVideoWindow.IsVisible) _bgVideoWindow.Show();
                             _bgVideoWindow.PlayBackgroundVideo(bg, 0);
@@ -1293,7 +1302,7 @@ public partial class ProjectionWindow : Window
 
         if (string.Equals(_videoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
         {
-            if (_bgVideoWindow == null) return;
+            if (_bgVideoWindow == null || !IsVisible || !(_lastState?.IsLive ?? true)) return;
             _currentMpvMediaPath = filePath;
             if (!_bgVideoWindow.IsVisible) _bgVideoWindow.Show();
             _bgVideoWindow.PlayMediaVideo(filePath, isPlaying, _isLooping, durationMs);
