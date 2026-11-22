@@ -95,7 +95,11 @@ public partial class MainWindow : Window
 
         // Clean up orphaned presentation caches, media, and thumbnails on startup
         CleanupOrphanedData();
-        startupProgress?.Invoke(92, "Cleaning temporary presentation data...");
+        startupProgress?.Invoke(90, "Cleaning temporary presentation data...");
+
+        // Pre-warm hardware acceleration, DirectX pipeline, and font rasterization
+        _projectionService.Prewarm();
+        startupProgress?.Invoke(96, "Pre-warming display shaders & hardware acceleration...");
 
 
 

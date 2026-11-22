@@ -1,6 +1,6 @@
 ; LuxPresenter Inno Setup Script
 #define MyAppName "LuxPresenter"
-#define MyAppVersion "1.1.2"
+#define MyAppVersion "1.1.3"
 #define MyAppPublisher "Luxbane"
 #define MyAppExeName "LuxPresenter.exe"
 #define SourceDir "..\Build"

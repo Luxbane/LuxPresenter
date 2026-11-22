@@ -325,29 +325,10 @@
 
 
         <!-- 2. WebView2 Chromium Browser Viewport -->
-
-
-
-        <Grid Grid.Row="1" Background="#FFFFFF">
-
-
-
+        <Grid x:Name="BrowserHostContainer" Grid.Row="1" Background="#202124">
             <wv2:WebView2 x:Name="Browser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-
-
-
-            
-
-
-
             <!-- Loading indicator overlay -->
-
-
-
-            <ProgressBar x:Name="LoadingBar" Height="3" VerticalAlignment="Top" IsIndeterminate="True" Visibility="Collapsed" Foreground="#1E60D2"/>
-
-
-
+            <ProgressBar x:Name="LoadingBar" Height="3" VerticalAlignment="Top" IsIndeterminate="True" Visibility="Collapsed" Foreground="#1E60D2" Panel.ZIndex="10"/>
         </Grid>
 
 

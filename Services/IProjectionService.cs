@@ -72,6 +72,7 @@ public interface IProjectionService
     void ToggleLogo();
     void SetBackground(string background);
 
+    void Prewarm();
     void ShowProjectionWindow();
     void HideProjectionWindow();
     bool IsProjectorConnected { get; }

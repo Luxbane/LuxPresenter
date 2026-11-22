@@ -72,10 +72,10 @@ public partial class App : Application
             var mainWindow = new MainWindow((progress, status) => splash.ReportProgress(progress, status));
             MainWindow = mainWindow;
 
-            splash.ReportProgress(96, "Finalizing startup...");
+            splash.ReportProgress(98, "Finalizing startup...");
             await Task.Yield();
             splash.ReportProgress(100, "Starting LuxPresenter...");
-            await Task.Delay(180);
+            await Task.Delay(150);
 
             splash.Close();
             mainWindow.Show();

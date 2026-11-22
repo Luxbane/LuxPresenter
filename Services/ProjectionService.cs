@@ -272,6 +272,46 @@ public class ProjectionService : IProjectionService, IDisposable
         NotifyStateChanged();
     }
 
+    public void Prewarm()
+    {
+        try
+        {
+            if (_window == null)
+            {
+                _window = new ProjectionWindow();
+                _window.VideoProgressReported += (pos, dur) => VideoProgressChanged?.Invoke(pos, dur);
+                _window.SetLooping(State.IsVideoLooping);
+                _window.Closed += (s, e) =>
+                {
+                    _window = null;
+                    _lastPositionedDevice = null;
+                    MemoryHelper.TrimMemoryAsync(300);
+                };
+            }
+
+            var screens = DisplayHelper.GetScreens();
+            ScreenInfo? targetScreen = null;
+            if (SelectedMonitorIndex >= 0 && SelectedMonitorIndex < screens.Count)
+            {
+                targetScreen = screens[SelectedMonitorIndex];
+            }
+            else
+            {
+                targetScreen = screens.FirstOrDefault(s => !s.IsPrimary) ?? screens.FirstOrDefault();
+            }
+
+            if (targetScreen != null)
+            {
+                _lastPositionedDevice = targetScreen.DeviceName;
+                _window.SyncPositionWithScreen(targetScreen);
+                _window.UpdateMargins(MarginTop, MarginBottom, MarginLeft, MarginRight);
+            }
+
+            _window.Prewarm();
+        }
+        catch { }
+    }
+
     public void ShowProjectionWindow()
     {
         bool isFirstOpen = _window == null;

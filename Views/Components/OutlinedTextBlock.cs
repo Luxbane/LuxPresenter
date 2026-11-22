@@ -191,6 +191,35 @@ public class OutlinedTextBlock : FrameworkElement
         return ft;
     }
 
+    public static void Prewarm()
+    {
+        try
+        {
+            var typeface = new Typeface(new FontFamily("Arial"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+            var ft = new FormattedText(
+                "LuxPresenter Warmup",
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                typeface,
+                48,
+                Brushes.White,
+                1.0
+            );
+            var geom = ft.BuildGeometry(new Point(0, 0));
+            if (geom != null)
+            {
+                var visual = new DrawingVisual();
+                using (var dc = visual.RenderOpen())
+                {
+                    var pen = new Pen(Brushes.Black, 2.0);
+                    dc.DrawGeometry(null, pen, geom);
+                    dc.DrawGeometry(Brushes.White, null, geom);
+                }
+            }
+        }
+        catch { }
+    }
+
     public static double CalculateOptimalFontSize(
         string text,
         FontFamily fontFamily,

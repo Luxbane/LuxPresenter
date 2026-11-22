@@ -356,6 +356,26 @@ public partial class ProjectionWindow : Window
         }
     }
 
+    public void Prewarm()
+    {
+        try
+        {
+            // 1. Prewarm font vector geometry engine
+            Components.OutlinedTextBlock.Prewarm();
+
+            // 2. Pre-measure and arrange both double-buffered slide layers
+            // This forces WPF to allocate the 1080p BitmapCache surfaces in GPU VRAM
+            SlideContentGridA.Measure(new Size(1920, 1080));
+            SlideContentGridA.Arrange(new Rect(0, 0, 1920, 1080));
+            SlideContentGridB.Measure(new Size(1920, 1080));
+            SlideContentGridB.Arrange(new Rect(0, 0, 1920, 1080));
+
+            // 3. Ensure window handles and background video window are ready in black state
+            UpdateState(_lastState ?? new ProjectionState { IsLive = false, IsBlack = true });
+        }
+        catch { }
+    }
+
     public void UpdateState(ProjectionState state)
     {
         _lastState = state;
