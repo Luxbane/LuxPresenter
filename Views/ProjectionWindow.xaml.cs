@@ -139,6 +139,7 @@ public partial class ProjectionWindow : Window
         _bgVideoWindow?.Hide();
         Hide();
         _isFirstRender = true;
+        _currentActiveBg = null;
     }
 
     public ProjectionWindow()
@@ -388,6 +389,7 @@ public partial class ProjectionWindow : Window
             _bgVideoWindow?.PauseVideo();
             _bgVideoWindow?.Hide();
             Hide();
+            _currentActiveBg = null;
             return;
         }
 
@@ -938,7 +940,7 @@ public partial class ProjectionWindow : Window
                     if (useBlend && durationMs > 0)
                     {
                         RootGrid.Background = Brushes.Transparent;
-                        if (_bgVideoWindow != null && IsVisible && (_lastState?.IsLive ?? true))
+                        if (_bgVideoWindow != null)
                         {
                             if (!_bgVideoWindow.IsVisible) _bgVideoWindow.Show();
                             _bgVideoWindow.PlayBackgroundVideo(bg, durationMs);
@@ -950,7 +952,7 @@ public partial class ProjectionWindow : Window
                     else
                     {
                         RootGrid.Background = Brushes.Transparent;
-                        if (_bgVideoWindow != null && IsVisible && (_lastState?.IsLive ?? true))
+                        if (_bgVideoWindow != null)
                         {
                             if (!_bgVideoWindow.IsVisible) _bgVideoWindow.Show();
                             _bgVideoWindow.PlayBackgroundVideo(bg, 0);
@@ -1302,7 +1304,7 @@ public partial class ProjectionWindow : Window
 
         if (string.Equals(_videoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
         {
-            if (_bgVideoWindow == null || !IsVisible || !(_lastState?.IsLive ?? true)) return;
+            if (_bgVideoWindow == null) return;
             _currentMpvMediaPath = filePath;
             if (!_bgVideoWindow.IsVisible) _bgVideoWindow.Show();
             _bgVideoWindow.PlayMediaVideo(filePath, isPlaying, _isLooping, durationMs);
