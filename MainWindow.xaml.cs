@@ -57,47 +57,8 @@ public partial class MainWindow : Window
 
         DataContext = _viewModel;
 
-
-
-        MainOnlineBrowserView.CloseRequested += () =>
-
-        {
-
-            MainLibraryView.SelectTab(_viewModel.LastActiveLibraryTabIndex);
-
-        };
-
-
-
-        // Wire dialog requests
-
-        _viewModel.OpenSongEditorRequested += OnOpenSongEditorRequested;
-
-        _viewModel.OpenOptionsRequested += OnOpenOptionsRequested;
-
-
-
-        // Apply saved song alignment & projection settings
-
         var initialSettings = _dataService.GetSettings();
-
-        if (initialSettings.LeftPaneWidth >= 260 && initialSettings.LeftPaneWidth <= 650)
-        {
-            LeftPaneColumn.Width = new GridLength(initialSettings.LeftPaneWidth);
-        }
-        else
-        {
-            LeftPaneColumn.Width = new GridLength(380);
-        }
-
-        PreviewPaneView.ApplyFormatting(initialSettings);
-
-        LivePaneView.ApplyFormatting(initialSettings);
-
-        _projectionService.UpdateSettings(initialSettings);
-
-        UpdateThemeUI(initialSettings.IsDarkMode);
-        UpdateStageMenuState();
+        ApplyInitialLayoutAndSettings(initialSettings);
 
         // Clean up orphaned presentation caches, media, and thumbnails on startup
         _cleanupService.CleanupOrphanedData();
@@ -107,48 +68,75 @@ public partial class MainWindow : Window
         _projectionService.Prewarm();
         startupProgress?.Invoke(96, "Pre-warming display shaders & hardware acceleration...");
 
+        // Wire functional event groups
+        WirePaneEvents();
+        WireViewModelDialogEvents();
+        WireLibraryEvents();
+        _keyboardShortcuts = CreateKeyboardShortcutService();
+        WireLifecycleEvents();
+    }
 
-
-        // Wire pane activation and prepared target events
-
-        PreviewPaneView.SlideActivated += (s, vm) =>
-
+    private void ApplyInitialLayoutAndSettings(AppSettings settings)
+    {
+        if (settings.LeftPaneWidth >= 260 && settings.LeftPaneWidth <= 650)
         {
+            LeftPaneColumn.Width = new GridLength(settings.LeftPaneWidth);
+        }
+        else
+        {
+            LeftPaneColumn.Width = new GridLength(380);
+        }
 
+        PreviewPaneView.ApplyFormatting(settings);
+        LivePaneView.ApplyFormatting(settings);
+        _projectionService.UpdateSettings(settings);
+        UpdateThemeUI(settings.IsDarkMode);
+        UpdateStageMenuState();
+    }
+
+    private void WirePaneEvents()
+    {
+        PreviewPaneView.SlideActivated += (s, vm) =>
+        {
             _viewModel.PreviewVM.IsActivePane = true;
-
             _viewModel.LiveVM.IsActivePane = false;
-
         };
-
-
 
         PreviewPaneView.SlidePrepared += (s, vm) =>
-
         {
-
             _viewModel.PreviewVM.IsActivePane = false;
-
             _viewModel.LiveVM.IsActivePane = true;
-
         };
-
-
 
         LivePaneView.SlideActivated += (s, vm) =>
-
         {
-
             _viewModel.LiveVM.IsActivePane = true;
-
             _viewModel.PreviewVM.IsActivePane = false;
+        };
+    }
 
+    private void WireViewModelDialogEvents()
+    {
+        _viewModel.OpenSongEditorRequested += OnOpenSongEditorRequested;
+        _viewModel.OpenOptionsRequested += OnOpenOptionsRequested;
+    }
+
+    private void WireLibraryEvents()
+    {
+        MainOnlineBrowserView.CloseRequested += () =>
+        {
+            MainLibraryView.SelectTab(_viewModel.LastActiveLibraryTabIndex);
         };
 
+        _viewModel.SongsVM.RequestImportSongBackup += () => OnImportSongBackupClick(this, new RoutedEventArgs());
+        _viewModel.SongsVM.RequestOpenSongsDirectory += () => OnOpenSongsFolderClick(this, new RoutedEventArgs());
+        _viewModel.SongsVM.RequestLoadSampleSongs += () => OnLoadSampleSongsClick(this, new RoutedEventArgs());
+        _viewModel.ScripturesVM.RequestImportBible += () => OnImportBibleClick(this, new RoutedEventArgs());
+    }
 
-
-        // Keyboard navigation shortcuts
-        _keyboardShortcuts = new KeyboardShortcutService(
+    private KeyboardShortcutService CreateKeyboardShortcutService()
+    {
+        var shortcuts = new KeyboardShortcutService(
             _viewModel,
             toggleTheme: () => OnToggleThemeClick(this, new RoutedEventArgs()),
             toggleStageDisplay: () => OnToggleStageDisplayClick(this, new RoutedEventArgs()),
@@ -156,31 +144,19 @@ public partial class MainWindow : Window
             openSchedule: () => OpenSchedule(),
             saveSchedule: (saveAs) => SaveSchedule(saveAs)
         );
-        _keyboardShortcuts.Attach(this);
+        shortcuts.Attach(this);
+        return shortcuts;
+    }
 
-
-
-        // Wire up Songs empty-state / quick actions
-
-        _viewModel.SongsVM.RequestImportSongBackup += () => OnImportSongBackupClick(this, new RoutedEventArgs());
-
-        _viewModel.SongsVM.RequestOpenSongsDirectory += () => OnOpenSongsFolderClick(this, new RoutedEventArgs());
-
-        _viewModel.SongsVM.RequestLoadSampleSongs += () => OnLoadSampleSongsClick(this, new RoutedEventArgs());
-
-        _viewModel.ScripturesVM.RequestImportBible += () => OnImportBibleClick(this, new RoutedEventArgs());
-
-
-
+    private void WireLifecycleEvents()
+    {
         // Auto-trim initial startup allocations (JIT, XAML parser caches, font tables) after 2.5 seconds of idle
-
         Loaded += (s, e) => MemoryHelper.TrimMemoryAsync(2500);
         Loaded += async (s, e) =>
         {
             await System.Threading.Tasks.Task.Delay(3500);
             await UpdateService.CheckForUpdatesAsync(this, silent: true);
         };
-
     }
 
 
