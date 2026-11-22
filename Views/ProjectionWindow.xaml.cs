@@ -567,6 +567,7 @@ public partial class ProjectionWindow : Window
                     SlideContentGridB.Opacity = 0.0;
                 }
             }
+            _isFirstRender = false;
             return;
         }
         else
@@ -597,6 +598,7 @@ public partial class ProjectionWindow : Window
             }
             _lastSlideId = null;
             _lastRenderedText = null;
+            _isFirstRender = false;
             return;
         }
 
@@ -883,6 +885,7 @@ public partial class ProjectionWindow : Window
                 StopMpvBackgroundVideo();
             }
             RootGrid.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#001833"));
+            _isFirstRender = false;
             return;
         }
 
@@ -1044,6 +1047,8 @@ public partial class ProjectionWindow : Window
             StopBackgroundVideo();
             StopMpvBackgroundVideo();
         }
+
+        _isFirstRender = false;
     }
 
     private void PlayBackgroundVideoMediaElement(string filePath, int durationMs)
