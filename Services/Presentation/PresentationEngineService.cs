@@ -43,13 +43,22 @@ public class PresentationEngineService
             string cachedPdf = Path.Combine(cacheDir, $"{Path.GetFileNameWithoutExtension(filePath)}.pdf");
             DateTime sourceLastWrite = File.GetLastWriteTimeUtc(fullPath);
 
-            if (File.Exists(cachedPdf) && File.GetLastWriteTimeUtc(cachedPdf) >= sourceLastWrite)
+            if (File.Exists(cachedPdf) && new FileInfo(cachedPdf).Length > 0 && File.GetLastWriteTimeUtc(cachedPdf) >= sourceLastWrite.AddSeconds(-2))
             {
                 pdfPath = cachedPdf;
             }
             else
             {
-                pdfPath = ConvertOfficeDocToPdf(fullPath, cacheDir);
+                // Fallback: check if any valid PDF exists in this document's cache folder
+                var existingPdfs = Directory.GetFiles(cacheDir, "*.pdf");
+                if (existingPdfs.Length > 0 && new FileInfo(existingPdfs[0]).Length > 0 && File.GetLastWriteTimeUtc(existingPdfs[0]) >= sourceLastWrite.AddSeconds(-2))
+                {
+                    pdfPath = existingPdfs[0];
+                }
+                else
+                {
+                    pdfPath = ConvertOfficeDocToPdf(fullPath, cacheDir);
+                }
             }
         }
         else
@@ -83,6 +92,20 @@ public class PresentationEngineService
         string userProfileDir = Path.Combine(AppPaths.PresentationCacheDirectory, "_user_profile").Replace("\\", "/");
         string userUrl = $"file:///{userProfileDir}";
 
+        // Clean up any stale LibreOffice lock files in the user profile directory
+        try
+        {
+            string actualProfileDir = Path.Combine(AppPaths.PresentationCacheDirectory, "_user_profile");
+            if (Directory.Exists(actualProfileDir))
+            {
+                foreach (var lockFile in Directory.GetFiles(actualProfileDir, ".~lock*", SearchOption.AllDirectories))
+                {
+                    try { File.Delete(lockFile); } catch { }
+                }
+            }
+        }
+        catch { }
+
         var psi = new ProcessStartInfo
         {
             FileName = sofficeCom,
@@ -93,19 +116,52 @@ public class PresentationEngineService
             CreateNoWindow = true
         };
 
-        using var proc = Process.Start(psi);
-        if (proc == null)
+        using var proc = new Process { StartInfo = psi };
+        var stdoutBuilder = new StringBuilder();
+        var stderrBuilder = new StringBuilder();
+
+        proc.OutputDataReceived += (s, e) => { if (e.Data != null) stdoutBuilder.AppendLine(e.Data); };
+        proc.ErrorDataReceived += (s, e) => { if (e.Data != null) stderrBuilder.AppendLine(e.Data); };
+
+        if (!proc.Start())
         {
             throw new InvalidOperationException("Failed to launch LibreOffice conversion process.");
         }
 
-        proc.WaitForExit(45000);
+        // Asynchronously read stdout and stderr to prevent OS pipe buffer deadlock
+        proc.BeginOutputReadLine();
+        proc.BeginErrorReadLine();
+
+        // 120-second timeout for large presentations or cold start
+        bool finished = proc.WaitForExit(120000);
+        if (!finished)
+        {
+            try { proc.Kill(entireProcessTree: true); } catch { }
+            throw new TimeoutException($"LibreOffice conversion timed out after 120 seconds for '{Path.GetFileName(inputPath)}'.");
+        }
 
         string baseName = Path.GetFileNameWithoutExtension(inputPath);
         string expectedPdf = Path.Combine(outputDir, $"{baseName}.pdf");
-        if (!File.Exists(expectedPdf))
+
+        // Verify expected PDF or check if LibreOffice generated a slightly differently named PDF in outputDir
+        if (!File.Exists(expectedPdf) || new FileInfo(expectedPdf).Length == 0)
         {
-            throw new IOException($"Presentation to PDF conversion failed. Expected output file: {expectedPdf}");
+            var pdfs = Directory.GetFiles(outputDir, "*.pdf");
+            if (pdfs.Length > 0)
+            {
+                var candidate = pdfs.OrderByDescending(f => File.GetLastWriteTimeUtc(f)).FirstOrDefault();
+                if (candidate != null && new FileInfo(candidate).Length > 0)
+                {
+                    expectedPdf = candidate;
+                }
+            }
+        }
+
+        if (!File.Exists(expectedPdf) || new FileInfo(expectedPdf).Length == 0)
+        {
+            string err = stderrBuilder.ToString().Trim();
+            string msg = string.IsNullOrWhiteSpace(err) ? stdoutBuilder.ToString().Trim() : err;
+            throw new IOException($"Presentation to PDF conversion failed. Expected output file: {expectedPdf}\nProcess Output: {msg}");
         }
 
         return expectedPdf;
@@ -136,17 +192,17 @@ public class PresentationEngineService
             string previewImg = Path.Combine(previewDir, $"slide_{slideNum}.png");
             string thumbImg = Path.Combine(thumbsDir, $"thumb_{slideNum}.jpg");
 
-            if (!File.Exists(previewImg) || !File.Exists(thumbImg))
+            if (!File.Exists(previewImg) || !File.Exists(thumbImg) || new FileInfo(previewImg).Length == 0 || new FileInfo(thumbImg).Length == 0)
             {
                 using var bitmap = Conversion.ToImage(pdfBytes, page: i);
-                if (!File.Exists(previewImg))
+                if (!File.Exists(previewImg) || new FileInfo(previewImg).Length == 0)
                 {
-                    using var fs = File.OpenWrite(previewImg);
+                    using var fs = File.Create(previewImg);
                     using var data = bitmap.Encode(SKEncodedImageFormat.Png, 95);
                     data.SaveTo(fs);
                 }
 
-                if (!File.Exists(thumbImg))
+                if (!File.Exists(thumbImg) || new FileInfo(thumbImg).Length == 0)
                 {
                     // Scale down for crisp fast thumbnail
                     int thumbWidth = 240;
@@ -154,7 +210,7 @@ public class PresentationEngineService
                     using var thumbBmp = bitmap.Resize(new SKImageInfo(thumbWidth, thumbHeight), SKSamplingOptions.Default);
                     if (thumbBmp != null)
                     {
-                        using var tfs = File.OpenWrite(thumbImg);
+                        using var tfs = File.Create(thumbImg);
                         using var tdata = thumbBmp.Encode(SKEncodedImageFormat.Jpeg, 85);
                         tdata.SaveTo(tfs);
                     }
