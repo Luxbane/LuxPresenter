@@ -38,6 +38,7 @@ public partial class ProjectionWindow : Window
     // Dual-Deck WPF MediaElement state (Smooth 60fps Blend Transition matching libmpv)
     private int _activeMediaElementDeck = 0;
     private System.Windows.Threading.DispatcherTimer? _mediaElementProgressTimer;
+    private System.Windows.Threading.DispatcherTimer? _mediaElementPreRollTimer;
     private MediaElement ActiveMediaElement => _activeMediaElementDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
 
     public ProjectionBackgroundWindow? BackgroundVideoWindow => _bgVideoWindow;
@@ -178,6 +179,7 @@ public partial class ProjectionWindow : Window
     {
         AlertService.Instance.AlertStateChanged -= OnAlertStateChanged;
         _mediaElementProgressTimer?.Stop();
+        _mediaElementPreRollTimer?.Stop();
     }
 
     private void OnAlertStateChanged()
@@ -999,22 +1001,19 @@ public partial class ProjectionWindow : Window
 
         if (useBlend)
         {
+            _mediaElementPreRollTimer?.Stop();
             bool hasStartedFade = false;
-            RoutedEventHandler? onMediaOpened = null;
-            System.Windows.Threading.DispatcherTimer? safetyTimer = null;
+            int pollTicks = 0;
 
             void TriggerCrossfade()
             {
                 if (hasStartedFade) return;
                 hasStartedFade = true;
 
-                if (onMediaOpened != null)
-                {
-                    incoming.MediaOpened -= onMediaOpened;
-                }
-                safetyTimer?.Stop();
+                _mediaElementPreRollTimer?.Stop();
+                _mediaElementPreRollTimer = null;
 
-                // 1. Fade in incoming video
+                // 1. Fade in incoming video (already moving at full frame rate!)
                 AnimateFade(incoming, 0.0, 1.0, durationMs, () =>
                 {
                     incoming.Opacity = 1.0;
@@ -1048,23 +1047,29 @@ public partial class ProjectionWindow : Window
                 _activeMediaElementDeck = incomingDeck;
             }
 
-            onMediaOpened = (s, e) => TriggerCrossfade();
-            incoming.MediaOpened += onMediaOpened;
+            // Pre-roll check: wait until incoming video has actually started decoding moving frames!
+            // This completely eliminates the 200-400ms static freeze on secondary displays / HDMI projectors.
+            _mediaElementPreRollTimer = new System.Windows.Threading.DispatcherTimer(
+                TimeSpan.FromMilliseconds(20),
+                System.Windows.Threading.DispatcherPriority.Render,
+                (s, e) =>
+                {
+                    pollTicks++;
+                    if (incoming.Position > TimeSpan.Zero || pollTicks >= 20) // max 400ms fallback
+                    {
+                        _mediaElementPreRollTimer?.Stop();
+                        _mediaElementPreRollTimer = null;
+                        TriggerCrossfade();
+                    }
+                },
+                Dispatcher);
 
-            // Safety fallback timer if MediaOpened takes longer or is primed
-            safetyTimer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(200)
-            };
-            safetyTimer.Tick += (s, e) =>
-            {
-                safetyTimer.Stop();
-                TriggerCrossfade();
-            };
-            safetyTimer.Start();
+            _mediaElementPreRollTimer.Start();
         }
         else
         {
+            _mediaElementPreRollTimer?.Stop();
+            _mediaElementPreRollTimer = null;
             incoming.Opacity = 1.0;
             outgoing.BeginAnimation(UIElement.OpacityProperty, null);
             outgoing.Opacity = 0.0;
@@ -1110,20 +1115,17 @@ public partial class ProjectionWindow : Window
 
         if (useBlend)
         {
+            _mediaElementPreRollTimer?.Stop();
             bool hasStartedFade = false;
-            RoutedEventHandler? onMediaOpened = null;
-            System.Windows.Threading.DispatcherTimer? safetyTimer = null;
+            int pollTicks = 0;
 
             void TriggerCrossfade()
             {
                 if (hasStartedFade) return;
                 hasStartedFade = true;
 
-                if (onMediaOpened != null)
-                {
-                    incoming.MediaOpened -= onMediaOpened;
-                }
-                safetyTimer?.Stop();
+                _mediaElementPreRollTimer?.Stop();
+                _mediaElementPreRollTimer = null;
 
                 AnimateFade(incoming, 0.0, 1.0, durationMs, () =>
                 {
@@ -1155,22 +1157,27 @@ public partial class ProjectionWindow : Window
                 _activeMediaElementDeck = incomingDeck;
             }
 
-            onMediaOpened = (s, e) => TriggerCrossfade();
-            incoming.MediaOpened += onMediaOpened;
+            _mediaElementPreRollTimer = new System.Windows.Threading.DispatcherTimer(
+                TimeSpan.FromMilliseconds(20),
+                System.Windows.Threading.DispatcherPriority.Render,
+                (s, e) =>
+                {
+                    pollTicks++;
+                    if (incoming.Position > TimeSpan.Zero || pollTicks >= 20)
+                    {
+                        _mediaElementPreRollTimer?.Stop();
+                        _mediaElementPreRollTimer = null;
+                        TriggerCrossfade();
+                    }
+                },
+                Dispatcher);
 
-            safetyTimer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(200)
-            };
-            safetyTimer.Tick += (s, e) =>
-            {
-                safetyTimer.Stop();
-                TriggerCrossfade();
-            };
-            safetyTimer.Start();
+            _mediaElementPreRollTimer.Start();
         }
         else
         {
+            _mediaElementPreRollTimer?.Stop();
+            _mediaElementPreRollTimer = null;
             incoming.Opacity = 1.0;
             outgoing.BeginAnimation(UIElement.OpacityProperty, null);
             outgoing.Opacity = 0.0;
@@ -1293,6 +1300,8 @@ public partial class ProjectionWindow : Window
 
     private void StopBackgroundVideo()
     {
+        _mediaElementPreRollTimer?.Stop();
+        _mediaElementPreRollTimer = null;
         try
         {
             BackgroundVideoElementA.BeginAnimation(UIElement.OpacityProperty, null);

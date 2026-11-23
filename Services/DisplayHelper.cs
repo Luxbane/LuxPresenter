@@ -181,7 +181,7 @@ public static class DisplayHelper
         {
             // Position behind MainWindow on primary screen (desktop background layer)
             SetWindowPos(hwnd, HWND_BOTTOM, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW | SWP_NOACTIVATE);
-            if (Application.Current.MainWindow != null)
+            if (Application.Current.MainWindow != null && Application.Current.MainWindow.IsVisible)
             {
                 Application.Current.MainWindow.Activate();
             }
@@ -189,7 +189,7 @@ public static class DisplayHelper
         else
         {
             // Position pixel-perfect across the secondary monitor (Physical Win32 coordinates)
-            SetWindowPos(hwnd, HWND_TOP, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW);
+            SetWindowPos(hwnd, HWND_TOP, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW | SWP_NOACTIVATE);
         }
     }
 

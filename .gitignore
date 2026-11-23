@@ -19,6 +19,7 @@ obj/
 # Local Machine and Runtime Logs
 display_log.txt
 media_log.txt
+test_output.txt
 *.log
 
 # Windows System and Explorer Metadata

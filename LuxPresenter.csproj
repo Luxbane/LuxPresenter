@@ -20,6 +20,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Tests\**" />
+    <None Remove="Tests\**" />
     <Resource Include="app_icon.png" />
     <None Include="app.ico" CopyToOutputDirectory="PreserveNewest" />
     <None Include="LICENSE" CopyToOutputDirectory="PreserveNewest" />
