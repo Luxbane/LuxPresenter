@@ -81,23 +81,35 @@ public static class Program
     {
         Log("********* Start testing of CoreTests *********");
 
-        // 1. Settings Migration
+        // 1. Settings Migration & Persistence
         try
         {
             string tmpDir = Path.Combine(Path.GetTempPath(), "lux_test_core_" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tmpDir);
             string settingsFile = Path.Combine(tmpDir, "settings.json");
-            File.WriteAllText(settingsFile, @"{ ""VideoBackgroundEngine"": ""libmpv"", ""SongTransition"": ""Blend"" }");
+            File.WriteAllText(settingsFile, @"{ ""VideoBackgroundEngine"": ""MediaElement"", ""SongTransition"": ""Blend"" }");
 
             var settings = System.Text.Json.JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(settingsFile)) ?? new();
             bool migrated = false;
-            if (string.Equals(settings.VideoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
+            if (!settings.EngineDefaultedToLibMpv)
             {
-                settings.VideoBackgroundEngine = "MediaElement";
+                settings.VideoBackgroundEngine = "libmpv";
+                settings.EngineDefaultedToLibMpv = true;
                 migrated = true;
             }
 
-            Assert(migrated && settings.VideoBackgroundEngine == "MediaElement", "CoreTests::settingsMigration");
+            Assert(migrated && settings.VideoBackgroundEngine == "libmpv" && settings.EngineDefaultedToLibMpv, "CoreTests::settingsMigration");
+
+            // Verify persistence: If user deliberately selects MediaElement or libmpv, it must not be reverted
+            settings.VideoBackgroundEngine = "MediaElement";
+            string savedJson = System.Text.Json.JsonSerializer.Serialize(settings);
+            var reloaded = System.Text.Json.JsonSerializer.Deserialize<AppSettings>(savedJson) ?? new();
+            if (!reloaded.EngineDefaultedToLibMpv)
+            {
+                reloaded.VideoBackgroundEngine = "libmpv";
+            }
+            Assert(reloaded.VideoBackgroundEngine == "MediaElement", "CoreTests::settingsPersistence");
+
             try { Directory.Delete(tmpDir, true); } catch { }
         }
         catch (Exception ex)

@@ -131,25 +131,39 @@ public class DataService : IDataService
             {
                 var json = File.ReadAllText(_settingsFile);
                 _settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new();
+                bool needSave = false;
+
                 if (!string.IsNullOrWhiteSpace(_settings.LastUsedBackground) &&
                     !_settings.LastUsedBackground.StartsWith("#") &&
                     !File.Exists(_settings.LastUsedBackground))
                 {
                     _settings.LastUsedBackground = string.Empty;
-                    SaveSettingsToFile();
+                    needSave = true;
                 }
 
-                if (string.Equals(_settings.VideoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
+                // If updating from a build where libmpv was forced to MediaElement, default back to libmpv once
+                if (!_settings.EngineDefaultedToLibMpv)
                 {
-                    _settings.VideoBackgroundEngine = "MediaElement";
+                    _settings.VideoBackgroundEngine = "libmpv";
+                    _settings.EngineDefaultedToLibMpv = true;
+                    needSave = true;
+                }
+                else if (string.IsNullOrWhiteSpace(_settings.VideoBackgroundEngine))
+                {
+                    _settings.VideoBackgroundEngine = "libmpv";
+                    needSave = true;
+                }
+
+                if (needSave)
+                {
                     SaveSettingsToFile();
                 }
             }
-            catch { _settings = new(); }
+            catch { _settings = new() { EngineDefaultedToLibMpv = true }; }
         }
         else
         {
-            _settings = new();
+            _settings = new() { EngineDefaultedToLibMpv = true };
             SaveSettingsToFile();
         }
     }

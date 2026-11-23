@@ -23,5 +23,6 @@
   "MediaTransition": "Blend",
   "ScreenTransition": "Blend",
   "TransitionDurationMs": 500,
-  "VideoBackgroundEngine": "libmpv"
+  "VideoBackgroundEngine": "libmpv",
+  "EngineDefaultedToLibMpv": true
 }

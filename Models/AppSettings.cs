@@ -49,8 +49,9 @@ public class AppSettings
     public string ScreenTransition { get; set; } = "Blend"; // Blend, Cut
     public int TransitionDurationMs { get; set; } = 500;
 
-    // Video Background Engine: "libmpv" (Experimental / Recommended) or "MediaElement" (Legacy WPF Fallback)
+    // Video Background Engine: "libmpv" (Recommended) or "MediaElement" (Legacy WPF Fallback)
     public string VideoBackgroundEngine { get; set; } = "libmpv";
+    public bool EngineDefaultedToLibMpv { get; set; } = false;
 
     // Stage Display (Confidence Monitor) Settings
     public bool EnableStageDisplay { get; set; } = false;
