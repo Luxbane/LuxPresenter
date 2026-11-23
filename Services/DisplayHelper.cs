@@ -229,35 +229,28 @@ public static class DisplayHelper
         if (!bgWindow.IsVisible) bgWindow.Show();
         if (!frontWindow.IsVisible) frontWindow.Show();
 
+        const uint flags = SWP_NOACTIVATE | SWP_SHOWWINDOW;
+
         if (screen.IsPrimary)
         {
             bgWindow.Topmost = false;
             frontWindow.Topmost = false;
 
-            var mainWin = Application.Current?.MainWindow;
-            IntPtr mainHwnd = mainWin != null ? new WindowInteropHelper(mainWin).Handle : IntPtr.Zero;
+            SetWindowPos(frontHwnd, HWND_BOTTOM, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, flags);
+            SetWindowPos(bgHwnd, HWND_BOTTOM, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, flags);
 
-            SetWindowPos(frontHwnd, HWND_NOTOPMOST, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW | SWP_NOACTIVATE);
-            SetWindowPos(bgHwnd, HWND_NOTOPMOST, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW | SWP_NOACTIVATE);
-
-            if (mainHwnd != IntPtr.Zero)
+            if (Application.Current?.MainWindow != null && Application.Current.MainWindow.IsVisible)
             {
-                SetWindowPos(mainHwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-                SetWindowPos(frontHwnd, mainHwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-                SetWindowPos(bgHwnd, frontHwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-                mainWin?.Activate();
-            }
-            else
-            {
-                SetWindowPos(frontHwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-                SetWindowPos(bgHwnd, frontHwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                Application.Current.MainWindow.Activate();
             }
         }
         else
         {
-            // Secondary monitor: front on top, bg directly behind front
-            SetWindowPos(frontHwnd, HWND_TOP, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW);
-            SetWindowPos(bgHwnd, frontHwnd, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+            // Secondary monitor: bg placed at TOP, then front placed at TOP (directly over bg)
+            bgWindow.Topmost = true;
+            frontWindow.Topmost = true;
+            SetWindowPos(bgHwnd, HWND_TOP, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, flags);
+            SetWindowPos(frontHwnd, HWND_TOP, screen.PhysicalLeft, screen.PhysicalTop, screen.PhysicalWidth, screen.PhysicalHeight, flags);
         }
     }
 

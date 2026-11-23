@@ -166,7 +166,7 @@ public partial class ProjectionBackgroundWindow : Window
                 incomingView.Player.StretchFill = true;
                 incomingView.Player.Play(filePath);
 
-                if (transitionDurationMs > 0 && outgoingView.Player != null && outgoingView.Player.IsPlaying)
+                if (transitionDurationMs > 0)
                 {
                     CrossfadeDecks(incomingDeck, transitionDurationMs);
                 }
@@ -208,15 +208,35 @@ public partial class ProjectionBackgroundWindow : Window
         // Bring the incoming deck to the top of Z-order to fade in over the outgoing deck
         incomingView.BringToTop();
         incomingView.SetAlpha(0);
-        outgoingView.SetAlpha(255);
 
         DateTime startTime = DateTime.UtcNow;
+        DateTime cueStartTime = DateTime.UtcNow;
+        bool isCued = false;
         byte lastAlpha = 0;
+
         _crossFadeTimer = new System.Windows.Threading.DispatcherTimer(
-            TimeSpan.FromMilliseconds(20),
+            TimeSpan.FromMilliseconds(16),
             System.Windows.Threading.DispatcherPriority.Render,
             (s, e) =>
             {
+                if (!isCued)
+                {
+                    // Hold alpha at 0 until frame 1 is decoded & ready on incoming deck HWND!
+                    // This completely prevents the "njepat / pop tiba-tiba" on dual-core potato laptops!
+                    bool ready = incomingView.Player?.IsFirstFrameReady() == true;
+                    bool timedOut = (DateTime.UtcNow - cueStartTime).TotalMilliseconds >= 1200;
+                    if (ready || timedOut)
+                    {
+                        isCued = true;
+                        startTime = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        incomingView.SetAlpha(0);
+                        return;
+                    }
+                }
+
                 double elapsedMs = (DateTime.UtcNow - startTime).TotalMilliseconds;
                 double progress = Math.Clamp(elapsedMs / durationMs, 0.0, 1.0);
 
@@ -265,7 +285,7 @@ public partial class ProjectionBackgroundWindow : Window
                 incomingView.Player.Play(filePath);
                 if (!isPlaying) incomingView.Player.SetPause(true);
 
-                if (transitionDurationMs > 0 && outgoingView.Player != null && outgoingView.Player.IsPlaying)
+                if (transitionDurationMs > 0)
                 {
                     CrossfadeDecks(incomingDeck, transitionDurationMs);
                 }

@@ -6,8 +6,8 @@
         Title="Projector Output" 
         WindowStyle="None" 
         ResizeMode="NoResize"
-        AllowsTransparency="False"
-        Background="#000000"
+        AllowsTransparency="True"
+        Background="Transparent"
         Topmost="False"
         ShowInTaskbar="False">
     

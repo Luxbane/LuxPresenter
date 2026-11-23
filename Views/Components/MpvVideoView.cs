@@ -87,7 +87,7 @@ public class MpvVideoView : HwndHost
         int height = (int)Math.Max(1, ActualHeight > 0 ? ActualHeight : 240);
 
         _hwnd = CreateWindowEx(
-            WS_EX_LAYERED,
+            0,
             "STATIC",
             string.Empty,
             WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | 0x0000000E, // SS_BLACKRECT
@@ -102,6 +102,8 @@ public class MpvVideoView : HwndHost
         {
             try
             {
+                int ex = GetWindowLong(_hwnd, GWL_EXSTYLE);
+                SetWindowLong(_hwnd, GWL_EXSTYLE, ex | WS_EX_LAYERED);
                 SetLayeredWindowAttributes(_hwnd, 0, _currentAlpha, LWA_ALPHA);
                 Player = new MpvPlayer(_hwnd);
                 PlayerReady?.Invoke(Player);

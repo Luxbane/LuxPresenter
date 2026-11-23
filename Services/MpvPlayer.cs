@@ -78,9 +78,17 @@ public class MpvPlayer : IDisposable
 
         // Configure options before mpv_initialize
         MpvNative.mpv_set_option_string(_ctx, "wid", hwnd.ToInt64().ToString());
-        MpvNative.mpv_set_option_string(_ctx, "vo", "gpu,direct3d");
-        MpvNative.mpv_set_option_string(_ctx, "gpu-context", "d3d11,win");
+        MpvNative.mpv_set_option_string(_ctx, "vo", "gpu");
+        MpvNative.mpv_set_option_string(_ctx, "gpu-context", "d3d11");
         MpvNative.mpv_set_option_string(_ctx, "hwdec", "auto-safe");
+        // Ultra-low GPU and CPU overhead settings for potato laptop iGPUs (e.g. Intel HD 5500)
+        MpvNative.mpv_set_option_string(_ctx, "profile", "fast");
+        MpvNative.mpv_set_option_string(_ctx, "scale", "bilinear");
+        MpvNative.mpv_set_option_string(_ctx, "cscale", "bilinear");
+        MpvNative.mpv_set_option_string(_ctx, "dscale", "bilinear");
+        MpvNative.mpv_set_option_string(_ctx, "d3d11-flip", "no");
+        MpvNative.mpv_set_option_string(_ctx, "d3d11-exclusive-fs", "no");
+        MpvNative.mpv_set_option_string(_ctx, "vd-lavc-threads", "2");
         MpvNative.mpv_set_option_string(_ctx, "keep-open", "yes");
         MpvNative.mpv_set_option_string(_ctx, "idle", "yes");
         MpvNative.mpv_set_option_string(_ctx, "force-window", "yes");
@@ -112,6 +120,7 @@ public class MpvPlayer : IDisposable
         // Apply looping, mute, and stretch options
         MpvNative.mpv_set_property_string(_ctx, "loop-file", _isLooping ? "inf" : "no");
         MpvNative.mpv_set_property_string(_ctx, "mute", _isMuted ? "yes" : "no");
+        MpvNative.mpv_set_property_string(_ctx, "aid", _isMuted ? "no" : "auto"); // Disable audio decoding when muted to save CPU on dual-core laptops
         MpvNative.mpv_set_property_string(_ctx, "keepaspect", _stretchFill ? "no" : "yes");
         MpvNative.mpv_command_string(_ctx, $"loadfile \"{normalized}\" replace");
         MpvNative.mpv_set_property_string(_ctx, "pause", "no");
@@ -144,6 +153,22 @@ public class MpvPlayer : IDisposable
         Position = 0;
         Length = 0;
         _currentFilePath = null;
+    }
+
+    public bool IsFirstFrameReady()
+    {
+        if (_isDisposed || _ctx == IntPtr.Zero) return false;
+        string? fc = MpvNative.GetPropertyString(_ctx, "video-frame-count");
+        if (!string.IsNullOrEmpty(fc) && long.TryParse(fc, out long count) && count >= 1)
+        {
+            return true;
+        }
+        string? pos = MpvNative.GetPropertyString(_ctx, "time-pos");
+        if (!string.IsNullOrEmpty(pos))
+        {
+            return true;
+        }
+        return false;
     }
 
     private bool _isSeeking = false;
