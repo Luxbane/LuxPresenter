@@ -12,6 +12,7 @@ namespace LuxPresenter.Converters;
 public class HexOrImageBrushConverter : IValueConverter
 {
     private static readonly Brush DefaultFallbackBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#001833"));
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageBrush> _brushCache = new(StringComparer.OrdinalIgnoreCase);
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
@@ -85,34 +86,22 @@ public class HexOrImageBrushConverter : IValueConverter
 
     private static ImageBrush? LoadImageBrush(string path)
     {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+
+        if (_brushCache.TryGetValue(path, out var cachedBrush))
+            return cachedBrush;
+
         try
         {
-            var ext = Path.GetExtension(path).ToLowerInvariant();
-
-            // For video backgrounds and media files, extract and render the video thumbnail
-            if (ThumbnailService.IsVideoFile(path))
+            var thumb = ThumbnailService.GetThumbnail(path, 160);
+            if (thumb != null)
             {
-                var thumb = ThumbnailService.GetVideoThumbnail(path);
-                if (thumb != null)
-                {
-                    return new ImageBrush(thumb) { Stretch = Stretch.UniformToFill };
-                }
-                return null;
+                var brush = new ImageBrush(thumb) { Stretch = Stretch.UniformToFill };
+                if (brush.CanFreeze) brush.Freeze();
+                _brushCache[path] = brush;
+                return brush;
             }
-
-            if (ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".bmp" && ext != ".gif")
-            {
-                return null;
-            }
-
-            var bmp = new BitmapImage();
-            bmp.BeginInit();
-            bmp.CacheOption = BitmapCacheOption.OnLoad;
-            bmp.UriSource = new Uri(path, UriKind.Absolute);
-            bmp.EndInit();
-            bmp.Freeze();
-
-            return new ImageBrush(bmp) { Stretch = Stretch.UniformToFill };
+            return null;
         }
         catch
         {

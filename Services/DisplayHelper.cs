@@ -293,7 +293,11 @@ public static class DisplayHelper
             SetWindowPos(hWndFront, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
             SetWindowPos(hWnd, hWndFront, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
-            if (Application.Current?.MainWindow != null)
+            // Only bring MainWindow to HWND_TOP when in Single Monitor Test Mode.
+            // On dual-monitor / projector mode, touching MainWindow across displays forces cross-monitor
+            // DWM composition sync stalls between different refresh rates, causing stutter on low-end laptops.
+            var screens = GetScreens();
+            if (screens.Count <= 1 && Application.Current?.MainWindow != null)
             {
                 var mainHwnd = new WindowInteropHelper(Application.Current.MainWindow).Handle;
                 if (mainHwnd != IntPtr.Zero)

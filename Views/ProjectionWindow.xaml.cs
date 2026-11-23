@@ -371,7 +371,14 @@ public partial class ProjectionWindow : Window
             SlideContentGridB.Measure(new Size(1920, 1080));
             SlideContentGridB.Arrange(new Rect(0, 0, 1920, 1080));
 
-            // 3. Ensure window handles and background video window are ready in black state
+            // 3. Prewarm active background image in background cache if applicable
+            var initialBg = _lastState?.ActiveBackground;
+            if (!string.IsNullOrWhiteSpace(initialBg) && File.Exists(initialBg) && !ThumbnailService.IsVideoFile(initialBg))
+            {
+                _ = Task.Run(() => GetOrLoadBackgroundImage(initialBg));
+            }
+
+            // 4. Ensure window handles and background video window are ready in black state
             UpdateState(_lastState ?? new ProjectionState { IsLive = false, IsBlack = true });
         }
         catch { }
@@ -882,6 +889,36 @@ public partial class ProjectionWindow : Window
 
     private int _activeBgLayer = 0;
     private string? _currentActiveBg;
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, BitmapSource> _bgImageCache = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Gets a frozen, cached full-resolution background image for projection.
+    /// Eliminates synchronous disk I/O and JPEG decoding lag during live transitions.
+    /// </summary>
+    public static BitmapSource? GetOrLoadBackgroundImage(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
+
+        if (_bgImageCache.TryGetValue(path, out var cached))
+            return cached;
+
+        try
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new Uri(path, UriKind.Absolute);
+            bitmap.EndInit();
+            if (bitmap.CanFreeze) bitmap.Freeze();
+
+            _bgImageCache[path] = bitmap;
+            return bitmap;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 
     private void ApplyBackground(string bg, string transition = "Blend", int durationMs = 350)
     {
@@ -942,9 +979,10 @@ public partial class ProjectionWindow : Window
                         RootGrid.Background = Brushes.Transparent;
                         if (_bgVideoWindow != null)
                         {
-                            if (!_bgVideoWindow.IsVisible) _bgVideoWindow.Show();
+                            bool needShow = !_bgVideoWindow.IsVisible;
+                            if (needShow) _bgVideoWindow.Show();
                             _bgVideoWindow.PlayBackgroundVideo(bg, durationMs);
-                            EnsureWindowOrder();
+                            if (needShow) EnsureWindowOrder();
                         }
 
                         FadeOutActiveImages(durationMs);
@@ -954,9 +992,10 @@ public partial class ProjectionWindow : Window
                         RootGrid.Background = Brushes.Transparent;
                         if (_bgVideoWindow != null)
                         {
-                            if (!_bgVideoWindow.IsVisible) _bgVideoWindow.Show();
+                            bool needShow = !_bgVideoWindow.IsVisible;
+                            if (needShow) _bgVideoWindow.Show();
                             _bgVideoWindow.PlayBackgroundVideo(bg, 0);
-                            EnsureWindowOrder();
+                            if (needShow) EnsureWindowOrder();
                             _bgVideoWindow.BeginAnimation(UIElement.OpacityProperty, null);
                             _bgVideoWindow.Opacity = 1.0;
                         }
@@ -983,12 +1022,8 @@ public partial class ProjectionWindow : Window
             {
                 try
                 {
-                    var bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.UriSource = new Uri(bg, UriKind.Absolute);
-                    bitmap.EndInit();
-                    if (bitmap.CanFreeze) bitmap.Freeze();
+                    var bitmap = GetOrLoadBackgroundImage(bg);
+                    if (bitmap == null) throw new InvalidOperationException("Failed to load background image.");
 
                     int nextLayer = 1 - _activeBgLayer;
                     var incomingImg = nextLayer == 0 ? BackgroundImageA : BackgroundImageB;
@@ -1306,9 +1341,10 @@ public partial class ProjectionWindow : Window
         {
             if (_bgVideoWindow == null) return;
             _currentMpvMediaPath = filePath;
-            if (!_bgVideoWindow.IsVisible) _bgVideoWindow.Show();
+            bool needShow = !_bgVideoWindow.IsVisible;
+            if (needShow) _bgVideoWindow.Show();
             _bgVideoWindow.PlayMediaVideo(filePath, isPlaying, _isLooping, durationMs);
-            EnsureWindowOrder();
+            if (needShow) EnsureWindowOrder();
         }
         else
         {

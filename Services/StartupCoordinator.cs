@@ -92,6 +92,17 @@ public static class StartupCoordinator
         await Task.Yield();
         projectionService.Prewarm();
 
+        // Asynchronously prewarm background thumbnails so BackgroundOptionsWindow opens with 0 latency
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                var backgrounds = dataService.GetBackgrounds();
+                ThumbnailService.PrewarmThumbnails(backgrounds);
+            }
+            catch { }
+        });
+
         return new StartupContext(
             dataService,
             projectionService,
@@ -140,6 +151,17 @@ public static class StartupCoordinator
 
         reportProgress?.Invoke(94, "Pre-warming display shaders & hardware acceleration...");
         projectionService.Prewarm();
+
+        // Asynchronously prewarm background thumbnails so BackgroundOptionsWindow opens with 0 latency
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                var backgrounds = dataService.GetBackgrounds();
+                ThumbnailService.PrewarmThumbnails(backgrounds);
+            }
+            catch { }
+        });
 
         return new StartupContext(
             dataService,

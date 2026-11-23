@@ -211,28 +211,32 @@ public partial class ProjectionBackgroundWindow : Window
         outgoingView.SetAlpha(255);
 
         DateTime startTime = DateTime.UtcNow;
-        _crossFadeTimer = new System.Windows.Threading.DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(16) // ~60fps smooth crossfade
-        };
-
-        _crossFadeTimer.Tick += (s, e) =>
-        {
-            double elapsedMs = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            double progress = Math.Clamp(elapsedMs / durationMs, 0.0, 1.0);
-
-            byte inAlpha = (byte)Math.Round(progress * 255.0);
-            incomingView.SetAlpha(inAlpha);
-
-            if (progress >= 1.0)
+        byte lastAlpha = 0;
+        _crossFadeTimer = new System.Windows.Threading.DispatcherTimer(
+            TimeSpan.FromMilliseconds(20),
+            System.Windows.Threading.DispatcherPriority.Render,
+            (s, e) =>
             {
-                _crossFadeTimer.Stop();
-                incomingView.SetAlpha(255);
-                outgoingView.SetAlpha(0);
-                outgoingView.Player?.Stop();
-                _activeDeck = targetDeck;
-            }
-        };
+                double elapsedMs = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                double progress = Math.Clamp(elapsedMs / durationMs, 0.0, 1.0);
+
+                byte inAlpha = (byte)Math.Round(progress * 255.0);
+                if (inAlpha != lastAlpha)
+                {
+                    lastAlpha = inAlpha;
+                    incomingView.SetAlpha(inAlpha);
+                }
+
+                if (progress >= 1.0)
+                {
+                    _crossFadeTimer?.Stop();
+                    incomingView.SetAlpha(255);
+                    outgoingView.SetAlpha(0);
+                    outgoingView.Player?.Stop();
+                    _activeDeck = targetDeck;
+                }
+            },
+            Dispatcher);
 
         _crossFadeTimer.Start();
     }
