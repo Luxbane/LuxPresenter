@@ -37,39 +37,27 @@ public partial class MainWindow : Window
 
 
 
-    public MainWindow(Action<double, string>? startupProgress = null)
-
+    public MainWindow() : this(StartupCoordinator.Initialize())
     {
+    }
 
+    public MainWindow(Action<double, string>? startupProgress) : this(StartupCoordinator.Initialize(startupProgress))
+    {
+    }
+
+    public MainWindow(StartupContext context)
+    {
         InitializeComponent();
-        startupProgress?.Invoke(58, "Loading application interface...");
 
-
-
-        _dataService = new DataService();
-        _cleanupService = new StartupCleanupService(_dataService);
-        _dialogService = new DialogService();
-        startupProgress?.Invoke(68, "Loading songs, media, presentations, and Bible data...");
-
-        _projectionService = new ProjectionService();
-
-        _viewModel = new MainViewModel(_dataService, _projectionService);
-        startupProgress?.Invoke(82, "Preparing preview and live output...");
-
-
+        _dataService = context.DataService;
+        _cleanupService = context.CleanupService;
+        _dialogService = context.DialogService;
+        _projectionService = context.ProjectionService;
+        _viewModel = context.ViewModel;
 
         DataContext = _viewModel;
 
-        var initialSettings = _dataService.GetSettings();
-        ApplyInitialLayoutAndSettings(initialSettings);
-
-        // Clean up orphaned presentation caches, media, and thumbnails on startup
-        _cleanupService.CleanupOrphanedData();
-        startupProgress?.Invoke(90, "Cleaning temporary presentation data...");
-
-        // Pre-warm hardware acceleration, DirectX pipeline, and font rasterization
-        _projectionService.Prewarm();
-        startupProgress?.Invoke(96, "Pre-warming display shaders & hardware acceleration...");
+        ApplyInitialLayoutAndSettings(context.Settings);
 
         // Wire functional event groups
         WirePaneEvents();
