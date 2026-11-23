@@ -95,7 +95,7 @@ public partial class OptionsWindow : Window
         else
             CmbTransitionDuration.SelectedIndex = 3;
 
-        if (string.Equals(_settings.VideoBackgroundEngine, "MediaElement", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(_settings.VideoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
             CmbVideoBgEngine.SelectedIndex = 1;
         else
             CmbVideoBgEngine.SelectedIndex = 0;
@@ -248,7 +248,7 @@ public partial class OptionsWindow : Window
         else
             _settings.TransitionDurationMs = 500;
 
-        _settings.VideoBackgroundEngine = CmbVideoBgEngine.SelectedIndex == 1 ? "MediaElement" : "libmpv";
+        _settings.VideoBackgroundEngine = CmbVideoBgEngine.SelectedIndex == 1 ? "libmpv" : "MediaElement";
 
         // Stage Display Settings
         _settings.EnableStageDisplay = ChkEnableStageDisplay.IsChecked == true;

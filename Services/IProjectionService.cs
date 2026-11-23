@@ -16,7 +16,7 @@ public class ProjectionState
     public bool IsVideoPlaying { get; set; } = false;
     public double VideoVolume { get; set; } = 1.0;
     public bool IsVideoLooping { get; set; } = true;
-    public string VideoBackgroundEngine { get; set; } = "libmpv"; // "libmpv" or "MediaElement"
+    public string VideoBackgroundEngine { get; set; } = "MediaElement"; // "MediaElement" (Unified Single-Window) or "libmpv"
 
     // Presentation Document Mode
     public bool IsPresentationDocMode { get; set; } = false;

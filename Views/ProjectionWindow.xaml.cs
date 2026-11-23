@@ -28,8 +28,8 @@ public partial class ProjectionWindow : Window
     [DllImport("user32.dll", EntryPoint = "SetWindowLong")]
     private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
-    private ProjectionBackgroundWindow? _bgVideoWindow;
-    private string _videoBackgroundEngine = "libmpv";
+    private ProjectionBackgroundWindow? _bgVideoWindow = null;
+    private string _videoBackgroundEngine = "MediaElement";
     private string? _currentMpvMediaPath;
     private bool _isLooping = true;
     private bool _isAlertAnimating = false;
@@ -63,44 +63,26 @@ public partial class ProjectionWindow : Window
     public void SetLooping(bool isLooping)
     {
         _isLooping = isLooping;
-        _bgVideoWindow?.SetLooping(isLooping);
     }
 
     public void SeekVideo(double percent)
     {
-        _bgVideoWindow?.SeekVideo(percent);
-
-        if (!string.Equals(_videoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
+        var active = ActiveMediaElement;
+        if (active.NaturalDuration.HasTimeSpan)
         {
-            var active = ActiveMediaElement;
-            if (active.NaturalDuration.HasTimeSpan)
-            {
-                var total = active.NaturalDuration.TimeSpan;
-                active.Position = TimeSpan.FromMilliseconds(total.TotalMilliseconds * Math.Clamp(percent, 0.0, 1.0));
-            }
+            var total = active.NaturalDuration.TimeSpan;
+            active.Position = TimeSpan.FromMilliseconds(total.TotalMilliseconds * Math.Clamp(percent, 0.0, 1.0));
         }
     }
 
     public void SyncPositionWithScreen(ScreenInfo screen)
     {
-        if (_bgVideoWindow != null)
-        {
-            DisplayHelper.PositionProjectionPair(_bgVideoWindow, this, screen);
-        }
-        else
-        {
-            DisplayHelper.PositionWindowOnScreen(this, screen);
-        }
+        DisplayHelper.PositionWindowOnScreen(this, screen);
     }
 
     public void HandleFallbackToSingleMonitor(ScreenInfo primaryScreen)
     {
         Topmost = false;
-        if (_bgVideoWindow != null)
-        {
-            _bgVideoWindow.Topmost = false;
-        }
-
         SyncPositionWithScreen(primaryScreen);
 
         if (Application.Current?.MainWindow != null)
@@ -108,12 +90,7 @@ public partial class ProjectionWindow : Window
             var mainWin = Application.Current.MainWindow;
             var mainHwnd = new System.Windows.Interop.WindowInteropHelper(mainWin).Handle;
             var frontHwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
-            var bgHwnd = _bgVideoWindow != null ? new System.Windows.Interop.WindowInteropHelper(_bgVideoWindow).Handle : IntPtr.Zero;
 
-            if (bgHwnd != IntPtr.Zero)
-            {
-                DisplayHelper.DemoteFromTopmostAndSendBehind(bgHwnd, IntPtr.Zero);
-            }
             if (frontHwnd != IntPtr.Zero)
             {
                 DisplayHelper.DemoteFromTopmostAndSendBehind(frontHwnd, mainHwnd);
@@ -126,17 +103,11 @@ public partial class ProjectionWindow : Window
 
     public void EnsureWindowOrder()
     {
-        if (_bgVideoWindow?.IsVisible == true && IsVisible)
-        {
-            var frontHwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
-            var bgHwnd = new System.Windows.Interop.WindowInteropHelper(_bgVideoWindow).Handle;
-            DisplayHelper.SetWindowBehind(bgHwnd, frontHwnd);
-        }
+        // Single Opaque Window architecture: no secondary background window to reorder
     }
 
     public void HideWindow()
     {
-        _bgVideoWindow?.Hide();
         Hide();
         _isFirstRender = true;
         _currentActiveBg = null;
@@ -152,14 +123,7 @@ public partial class ProjectionWindow : Window
 
         PreviewMouseDown += (s, e) =>
         {
-            EnsureWindowOrder();
             Application.Current?.MainWindow?.Activate();
-        };
-
-        _bgVideoWindow = new ProjectionBackgroundWindow();
-        _bgVideoWindow.VideoProgressReported += (cur, total) =>
-        {
-            Dispatcher.BeginInvoke(() => VideoProgressReported?.Invoke(cur, total));
         };
 
         BackgroundVideoElementA.MediaOpened += (s, e) =>
@@ -214,12 +178,6 @@ public partial class ProjectionWindow : Window
         AlertService.Instance.AlertStateChanged -= OnAlertStateChanged;
         _mediaElementCrossfadeTimer?.Stop();
         _mediaElementProgressTimer?.Stop();
-        try
-        {
-            _bgVideoWindow?.Close();
-            _bgVideoWindow = null;
-        }
-        catch { }
     }
 
     private void OnAlertStateChanged()
@@ -390,11 +348,12 @@ public partial class ProjectionWindow : Window
         _videoBackgroundEngine = state.VideoBackgroundEngine ?? "libmpv";
         int duration = state.TransitionDurationMs > 0 ? state.TransitionDurationMs : 250;
 
-        // If Live output is completely turned off, keep projection and background windows hidden!
+        // If Live output is completely turned off, keep projection window hidden!
         if (!state.IsLive)
         {
-            _bgVideoWindow?.PauseVideo();
-            _bgVideoWindow?.Hide();
+            if (BackgroundVideoElementA.Visibility == Visibility.Visible) BackgroundVideoElementA.Pause();
+            if (BackgroundVideoElementB.Visibility == Visibility.Visible) BackgroundVideoElementB.Pause();
+            if (ActiveMediaElement.Visibility == Visibility.Visible) ActiveMediaElement.Pause();
             Hide();
             _currentActiveBg = null;
             return;
@@ -407,7 +366,6 @@ public partial class ProjectionWindow : Window
         if (shouldBlack)
         {
             SetLogoOverlay(false, state.ScreenTransition, duration);
-            _bgVideoWindow?.PauseVideo();
             if (BackgroundVideoElementA.Visibility == Visibility.Visible) BackgroundVideoElementA.Pause();
             if (BackgroundVideoElementB.Visibility == Visibility.Visible) BackgroundVideoElementB.Pause();
             if (ActiveMediaElement.Visibility == Visibility.Visible) ActiveMediaElement.Pause();
@@ -416,28 +374,15 @@ public partial class ProjectionWindow : Window
         {
             if (_isCurrentlyInVideoMode && state.IsVideoPlaying)
             {
-                if (string.Equals(_videoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
-                    _bgVideoWindow?.ResumeVideo();
-                else
-                    ActiveMediaElement.Play();
+                ActiveMediaElement.Play();
             }
             else if (_isCurrentlyInVideoMode && !state.IsVideoPlaying)
             {
-                if (string.Equals(_videoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
-                    _bgVideoWindow?.PauseVideo();
-                else
-                    ActiveMediaElement.Pause();
+                ActiveMediaElement.Pause();
             }
             else if (!_isCurrentlyInVideoMode)
             {
-                if (string.Equals(_videoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (_bgVideoWindow?.IsVisible == true) _bgVideoWindow?.ResumeVideo();
-                }
-                else
-                {
-                    if (ActiveMediaElement.Visibility == Visibility.Visible) ActiveMediaElement.Play();
-                }
+                if (ActiveMediaElement.Visibility == Visibility.Visible) ActiveMediaElement.Play();
             }
         }
 
@@ -506,16 +451,8 @@ public partial class ProjectionWindow : Window
                 }
                 else
                 {
-                    if (string.Equals(_videoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (isPlaying) _bgVideoWindow?.ResumeVideo();
-                        else _bgVideoWindow?.PauseVideo();
-                    }
-                    else
-                    {
-                        if (isPlaying) ActiveMediaElement.Play();
-                        else ActiveMediaElement.Pause();
-                    }
+                    if (isPlaying) ActiveMediaElement.Play();
+                    else ActiveMediaElement.Pause();
                 }
             }
             if (shouldBlack)
@@ -559,7 +496,6 @@ public partial class ProjectionWindow : Window
         ApplyBackground(state.ActiveBackground, effectiveSongTransition, effectiveDuration);
         if (shouldBlack)
         {
-            _bgVideoWindow?.PauseVideo();
             if (BackgroundVideoElementA.Visibility == Visibility.Visible) BackgroundVideoElementA.Pause();
             if (BackgroundVideoElementB.Visibility == Visibility.Visible) BackgroundVideoElementB.Pause();
             if (ActiveMediaElement.Visibility == Visibility.Visible) ActiveMediaElement.Pause();
@@ -966,57 +902,10 @@ public partial class ProjectionWindow : Window
 
             if (isVideo)
             {
-                if (string.Equals(_videoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
-                {
-                    // === Hardware Accelerated LibMPV Video Background ===
-                    StopBackgroundVideo(); // Stop MediaElement fallback
-
-                    bool useBlend = string.Equals(transition, "Blend", StringComparison.OrdinalIgnoreCase) && !_isFirstRender && IsLoaded;
-
-                    // If transitioning with Blend from another video or image:
-                    if (useBlend && durationMs > 0)
-                    {
-                        RootGrid.Background = Brushes.Transparent;
-                        if (_bgVideoWindow != null)
-                        {
-                            bool needShow = !_bgVideoWindow.IsVisible;
-                            if (needShow) _bgVideoWindow.Show();
-                            _bgVideoWindow.PlayBackgroundVideo(bg, durationMs);
-                            if (needShow) EnsureWindowOrder();
-                        }
-
-                        FadeOutActiveImages(durationMs);
-                    }
-                    else
-                    {
-                        RootGrid.Background = Brushes.Transparent;
-                        if (_bgVideoWindow != null)
-                        {
-                            bool needShow = !_bgVideoWindow.IsVisible;
-                            if (needShow) _bgVideoWindow.Show();
-                            _bgVideoWindow.PlayBackgroundVideo(bg, 0);
-                            if (needShow) EnsureWindowOrder();
-                            _bgVideoWindow.BeginAnimation(UIElement.OpacityProperty, null);
-                            _bgVideoWindow.Opacity = 1.0;
-                        }
-
-                        BackgroundImageA.BeginAnimation(UIElement.OpacityProperty, null);
-                        BackgroundImageB.BeginAnimation(UIElement.OpacityProperty, null);
-                        BackgroundImageA.Opacity = 0.0;
-                        BackgroundImageB.Opacity = 0.0;
-                        BackgroundImageA.Source = null;
-                        BackgroundImageB.Source = null;
-                    }
-                }
-                else
-                {
-                    // === Dual-Deck WPF MediaElement Engine (Smooth Blend matching libmpv) ===
-                    StopMpvBackgroundVideo();
-                    RootGrid.Background = Brushes.Transparent;
-
-                    bool useBlend = string.Equals(transition, "Blend", StringComparison.OrdinalIgnoreCase) && !_isFirstRender && IsLoaded;
-                    PlayBackgroundVideoMediaElement(bg, useBlend ? durationMs : 0);
-                }
+                // === Unified Single-Window Hardware Accelerated Video Background Engine ===
+                RootGrid.Background = Brushes.Black;
+                bool useBlend = string.Equals(transition, "Blend", StringComparison.OrdinalIgnoreCase) && !_isFirstRender && IsLoaded;
+                PlayBackgroundVideoMediaElement(bg, useBlend ? durationMs : 0);
             }
             else
             {
@@ -1336,21 +1225,7 @@ public partial class ProjectionWindow : Window
     private void PlayMediaOnProjector(string filePath, bool isPlaying, int durationMs = 0)
     {
         if (string.IsNullOrWhiteSpace(filePath)) return;
-
-        if (string.Equals(_videoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
-        {
-            if (_bgVideoWindow == null) return;
-            _currentMpvMediaPath = filePath;
-            bool needShow = !_bgVideoWindow.IsVisible;
-            if (needShow) _bgVideoWindow.Show();
-            _bgVideoWindow.PlayMediaVideo(filePath, isPlaying, _isLooping, durationMs);
-            if (needShow) EnsureWindowOrder();
-        }
-        else
-        {
-            StopMpvBackgroundVideo();
-            PlayMediaElementVideo(filePath, isPlaying, _isLooping, durationMs);
-        }
+        PlayMediaElementVideo(filePath, isPlaying, _isLooping, durationMs);
     }
 
     private void OnBackgroundVideoEndedA(object sender, RoutedEventArgs e)
