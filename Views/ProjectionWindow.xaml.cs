@@ -974,9 +974,17 @@ public partial class ProjectionWindow : Window
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath)) return;
 
+        _mediaElementPreRollTimer?.Stop();
+        _mediaElementPreRollTimer = null;
+
         int incomingDeck = 1 - _activeMediaElementDeck;
         var incoming = incomingDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
         var outgoing = _activeMediaElementDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
+
+        bool hasOutgoingVideo = (outgoing.Visibility == Visibility.Visible && outgoing.Source != null && outgoing.Opacity > 0.01);
+        bool hasOutgoingImage = (BackgroundImageA.Visibility == Visibility.Visible && BackgroundImageA.Opacity > 0.01) ||
+                                (BackgroundImageB.Visibility == Visibility.Visible && BackgroundImageB.Opacity > 0.01);
+        bool useBlend = durationMs > 0 && (hasOutgoingVideo || hasOutgoingImage);
 
         incoming.BeginAnimation(UIElement.OpacityProperty, null);
         incoming.IsMuted = true;
@@ -987,40 +995,41 @@ public partial class ProjectionWindow : Window
         incoming.HorizontalAlignment = HorizontalAlignment.Stretch;
         incoming.VerticalAlignment = VerticalAlignment.Stretch;
         incoming.Visibility = Visibility.Visible;
-        incoming.Opacity = 0.0;
-
-        // Bring incoming video to top of background stack, below lyrics (ZIndex 10)
-        Panel.SetZIndex(incoming, 6);
-        Panel.SetZIndex(outgoing, 5);
-        Panel.SetZIndex(BackgroundImageA, 4);
-        Panel.SetZIndex(BackgroundImageB, 4);
-
-        incoming.Play();
-
-        bool useBlend = durationMs > 0;
 
         if (useBlend)
         {
-            _mediaElementPreRollTimer?.Stop();
-            bool hasStartedFade = false;
-            int pollTicks = 0;
+            // === ZERO-FREEZE DUAL-DECK REVEAL ARCHITECTURE ===
+            // 1. Keep the outgoing video/image fully visible and smoothly playing on TOP (ZIndex 6).
+            // 2. Place incoming video UNDERNEATH (ZIndex 5) at 100% Opacity and start decoding.
+            // All D3D surface allocation, decoder initialization, and frame-0 buffering happens
+            // completely hidden underneath the smoothly playing outgoing background!
+            Panel.SetZIndex(outgoing, 6);
+            Panel.SetZIndex(incoming, 5);
+            if (BackgroundImageA.Opacity > 0.01) Panel.SetZIndex(BackgroundImageA, 6);
+            if (BackgroundImageB.Opacity > 0.01) Panel.SetZIndex(BackgroundImageB, 6);
 
-            void TriggerCrossfade()
+            incoming.Opacity = 1.0;
+            incoming.Play();
+
+            bool hasStartedFade = false;
+            RoutedEventHandler? onMediaOpened = null;
+            System.Windows.Threading.DispatcherTimer? safetyTimer = null;
+
+            void StartRevealFade()
             {
                 if (hasStartedFade) return;
                 hasStartedFade = true;
 
+                if (onMediaOpened != null)
+                {
+                    incoming.MediaOpened -= onMediaOpened;
+                }
+                safetyTimer?.Stop();
                 _mediaElementPreRollTimer?.Stop();
                 _mediaElementPreRollTimer = null;
 
-                // 1. Fade in incoming video (already moving at full frame rate!)
-                AnimateFade(incoming, 0.0, 1.0, durationMs, () =>
-                {
-                    incoming.Opacity = 1.0;
-                });
-
-                // 2. Fade out outgoing video
-                if (outgoing.Visibility == Visibility.Visible && outgoing.Source != null && outgoing.Opacity > 0.01)
+                // Outgoing layer smoothly dissolves away, revealing incoming video already moving at 60fps!
+                if (hasOutgoingVideo)
                 {
                     var outDeck = outgoing;
                     AnimateFade(outDeck, outDeck.Opacity, 0.0, durationMs, () =>
@@ -1041,36 +1050,50 @@ public partial class ProjectionWindow : Window
                     outgoing.Source = null;
                 }
 
-                // 3. Fade out active images
                 FadeOutActiveImages(durationMs);
-
                 _activeMediaElementDeck = incomingDeck;
             }
 
-            // Pre-roll check: wait until incoming video has actually started decoding moving frames!
-            // This completely eliminates the 200-400ms static freeze on secondary displays / HDMI projectors.
-            _mediaElementPreRollTimer = new System.Windows.Threading.DispatcherTimer(
-                TimeSpan.FromMilliseconds(20),
-                System.Windows.Threading.DispatcherPriority.Render,
-                (s, e) =>
-                {
-                    pollTicks++;
-                    if (incoming.Position > TimeSpan.Zero || pollTicks >= 20) // max 400ms fallback
+            // Once incoming video has parsed header and initialized the decoder:
+            // Allow a short 100ms render buffer to ensure the video clock is actively advancing,
+            // then fade out the outgoing video!
+            onMediaOpened = (s, e) =>
+            {
+                _mediaElementPreRollTimer = new System.Windows.Threading.DispatcherTimer(
+                    TimeSpan.FromMilliseconds(100),
+                    System.Windows.Threading.DispatcherPriority.Render,
+                    (ts, te) =>
                     {
                         _mediaElementPreRollTimer?.Stop();
                         _mediaElementPreRollTimer = null;
-                        TriggerCrossfade();
-                    }
+                        StartRevealFade();
+                    },
+                    Dispatcher);
+                _mediaElementPreRollTimer.Start();
+            };
+
+            incoming.MediaOpened += onMediaOpened;
+
+            // Safety fallback: if MediaOpened takes longer than 350ms, start fade regardless
+            safetyTimer = new System.Windows.Threading.DispatcherTimer(
+                TimeSpan.FromMilliseconds(350),
+                System.Windows.Threading.DispatcherPriority.Render,
+                (s, e) =>
+                {
+                    safetyTimer?.Stop();
+                    StartRevealFade();
                 },
                 Dispatcher);
-
-            _mediaElementPreRollTimer.Start();
+            safetyTimer.Start();
         }
         else
         {
-            _mediaElementPreRollTimer?.Stop();
-            _mediaElementPreRollTimer = null;
-            incoming.Opacity = 1.0;
+            // First video or Cut transition
+            Panel.SetZIndex(incoming, 6);
+            Panel.SetZIndex(outgoing, 5);
+            Panel.SetZIndex(BackgroundImageA, 4);
+            Panel.SetZIndex(BackgroundImageB, 4);
+
             outgoing.BeginAnimation(UIElement.OpacityProperty, null);
             outgoing.Opacity = 0.0;
             outgoing.Stop();
@@ -1078,6 +1101,20 @@ public partial class ProjectionWindow : Window
             outgoing.Source = null;
 
             FadeOutActiveImages(0);
+
+            if (durationMs > 0)
+            {
+                // First video fade-in from black
+                incoming.Opacity = 0.0;
+                incoming.Play();
+                AnimateFade(incoming, 0.0, 1.0, durationMs, () => incoming.Opacity = 1.0);
+            }
+            else
+            {
+                incoming.Opacity = 1.0;
+                incoming.Play();
+            }
+
             _activeMediaElementDeck = incomingDeck;
         }
     }
@@ -1087,10 +1124,17 @@ public partial class ProjectionWindow : Window
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath)) return;
 
         _currentMpvMediaPath = filePath;
+        _mediaElementPreRollTimer?.Stop();
+        _mediaElementPreRollTimer = null;
 
         int incomingDeck = 1 - _activeMediaElementDeck;
         var incoming = incomingDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
         var outgoing = _activeMediaElementDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
+
+        bool hasOutgoingVideo = (outgoing.Visibility == Visibility.Visible && outgoing.Source != null && outgoing.Opacity > 0.01);
+        bool hasOutgoingImage = (BackgroundImageA.Visibility == Visibility.Visible && BackgroundImageA.Opacity > 0.01) ||
+                                (BackgroundImageB.Visibility == Visibility.Visible && BackgroundImageB.Opacity > 0.01);
+        bool useBlend = durationMs > 0 && (hasOutgoingVideo || hasOutgoingImage);
 
         incoming.BeginAnimation(UIElement.OpacityProperty, null);
         incoming.IsMuted = false;
@@ -1101,38 +1145,36 @@ public partial class ProjectionWindow : Window
         incoming.HorizontalAlignment = HorizontalAlignment.Center;
         incoming.VerticalAlignment = VerticalAlignment.Center;
         incoming.Visibility = Visibility.Visible;
-        incoming.Opacity = 0.0;
-
-        Panel.SetZIndex(incoming, 6);
-        Panel.SetZIndex(outgoing, 5);
-        Panel.SetZIndex(BackgroundImageA, 4);
-        Panel.SetZIndex(BackgroundImageB, 4);
-
-        incoming.Play();
-        if (!isPlaying) incoming.Pause();
-
-        bool useBlend = durationMs > 0;
 
         if (useBlend)
         {
-            _mediaElementPreRollTimer?.Stop();
-            bool hasStartedFade = false;
-            int pollTicks = 0;
+            Panel.SetZIndex(outgoing, 6);
+            Panel.SetZIndex(incoming, 5);
+            if (BackgroundImageA.Opacity > 0.01) Panel.SetZIndex(BackgroundImageA, 6);
+            if (BackgroundImageB.Opacity > 0.01) Panel.SetZIndex(BackgroundImageB, 6);
 
-            void TriggerCrossfade()
+            incoming.Opacity = 1.0;
+            incoming.Play();
+            if (!isPlaying) incoming.Pause();
+
+            bool hasStartedFade = false;
+            RoutedEventHandler? onMediaOpened = null;
+            System.Windows.Threading.DispatcherTimer? safetyTimer = null;
+
+            void StartRevealFade()
             {
                 if (hasStartedFade) return;
                 hasStartedFade = true;
 
+                if (onMediaOpened != null)
+                {
+                    incoming.MediaOpened -= onMediaOpened;
+                }
+                safetyTimer?.Stop();
                 _mediaElementPreRollTimer?.Stop();
                 _mediaElementPreRollTimer = null;
 
-                AnimateFade(incoming, 0.0, 1.0, durationMs, () =>
-                {
-                    incoming.Opacity = 1.0;
-                });
-
-                if (outgoing.Visibility == Visibility.Visible && outgoing.Source != null && outgoing.Opacity > 0.01)
+                if (hasOutgoingVideo)
                 {
                     var outDeck = outgoing;
                     AnimateFade(outDeck, outDeck.Opacity, 0.0, durationMs, () =>
@@ -1157,28 +1199,41 @@ public partial class ProjectionWindow : Window
                 _activeMediaElementDeck = incomingDeck;
             }
 
-            _mediaElementPreRollTimer = new System.Windows.Threading.DispatcherTimer(
-                TimeSpan.FromMilliseconds(20),
-                System.Windows.Threading.DispatcherPriority.Render,
-                (s, e) =>
-                {
-                    pollTicks++;
-                    if (incoming.Position > TimeSpan.Zero || pollTicks >= 20)
+            onMediaOpened = (s, e) =>
+            {
+                _mediaElementPreRollTimer = new System.Windows.Threading.DispatcherTimer(
+                    TimeSpan.FromMilliseconds(100),
+                    System.Windows.Threading.DispatcherPriority.Render,
+                    (ts, te) =>
                     {
                         _mediaElementPreRollTimer?.Stop();
                         _mediaElementPreRollTimer = null;
-                        TriggerCrossfade();
-                    }
+                        StartRevealFade();
+                    },
+                    Dispatcher);
+                _mediaElementPreRollTimer.Start();
+            };
+
+            incoming.MediaOpened += onMediaOpened;
+
+            safetyTimer = new System.Windows.Threading.DispatcherTimer(
+                TimeSpan.FromMilliseconds(350),
+                System.Windows.Threading.DispatcherPriority.Render,
+                (s, e) =>
+                {
+                    safetyTimer?.Stop();
+                    StartRevealFade();
                 },
                 Dispatcher);
-
-            _mediaElementPreRollTimer.Start();
+            safetyTimer.Start();
         }
         else
         {
-            _mediaElementPreRollTimer?.Stop();
-            _mediaElementPreRollTimer = null;
-            incoming.Opacity = 1.0;
+            Panel.SetZIndex(incoming, 6);
+            Panel.SetZIndex(outgoing, 5);
+            Panel.SetZIndex(BackgroundImageA, 4);
+            Panel.SetZIndex(BackgroundImageB, 4);
+
             outgoing.BeginAnimation(UIElement.OpacityProperty, null);
             outgoing.Opacity = 0.0;
             outgoing.Stop();
@@ -1186,6 +1241,21 @@ public partial class ProjectionWindow : Window
             outgoing.Source = null;
 
             FadeOutActiveImages(0);
+
+            if (durationMs > 0)
+            {
+                incoming.Opacity = 0.0;
+                incoming.Play();
+                if (!isPlaying) incoming.Pause();
+                AnimateFade(incoming, 0.0, 1.0, durationMs, () => incoming.Opacity = 1.0);
+            }
+            else
+            {
+                incoming.Opacity = 1.0;
+                incoming.Play();
+                if (!isPlaying) incoming.Pause();
+            }
+
             _activeMediaElementDeck = incomingDeck;
         }
 
