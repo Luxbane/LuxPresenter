@@ -37,7 +37,6 @@ public partial class ProjectionWindow : Window
 
     // Dual-Deck WPF MediaElement state (Smooth 60fps Blend Transition matching libmpv)
     private int _activeMediaElementDeck = 0;
-    private System.Windows.Threading.DispatcherTimer? _mediaElementCrossfadeTimer;
     private System.Windows.Threading.DispatcherTimer? _mediaElementProgressTimer;
     private MediaElement ActiveMediaElement => _activeMediaElementDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
 
@@ -111,6 +110,8 @@ public partial class ProjectionWindow : Window
         Hide();
         _isFirstRender = true;
         _currentActiveBg = null;
+        _lastSlideId = null;
+        _lastRenderedText = null;
     }
 
     public ProjectionWindow()
@@ -176,7 +177,6 @@ public partial class ProjectionWindow : Window
     private void OnProjectionWindowClosed(object? sender, EventArgs e)
     {
         AlertService.Instance.AlertStateChanged -= OnAlertStateChanged;
-        _mediaElementCrossfadeTimer?.Stop();
         _mediaElementProgressTimer?.Stop();
     }
 
@@ -408,37 +408,25 @@ public partial class ProjectionWindow : Window
                                      string.Equals(effectiveScreenTransition, "Blend", StringComparison.OrdinalIgnoreCase)) && effectiveDuration > 0;
 
                 StopBackgroundVideo();
-                RootGrid.Background = Brushes.Transparent;
+                RootGrid.Background = Brushes.Black;
 
                 bool isPlaying = shouldBlack ? false : state.IsVideoPlaying;
 
-                if (useMediaBlend && effectiveDuration > 0 && !_isFirstRender)
+                if (useMediaBlend && effectiveDuration > 0)
                 {
                     PlayMediaOnProjector(state.MediaFilePath, isPlaying, effectiveDuration);
                     AnimateFade(SlideContentGridA, SlideContentGridA.Opacity, 0.0, effectiveDuration);
                     AnimateFade(SlideContentGridB, SlideContentGridB.Opacity, 0.0, effectiveDuration);
-                    if (BackgroundImageA.Source != null && BackgroundImageA.Opacity > 0.01)
-                    {
-                        AnimateFade(BackgroundImageA, BackgroundImageA.Opacity, 0.0, effectiveDuration, () => BackgroundImageA.Source = null);
-                    }
-                    if (BackgroundImageB.Source != null && BackgroundImageB.Opacity > 0.01)
-                    {
-                        AnimateFade(BackgroundImageB, BackgroundImageB.Opacity, 0.0, effectiveDuration, () => BackgroundImageB.Source = null);
-                    }
+                    FadeOutActiveImages(effectiveDuration);
                 }
                 else
                 {
                     PlayMediaOnProjector(state.MediaFilePath, isPlaying, 0);
                     SlideContentGridA.BeginAnimation(UIElement.OpacityProperty, null);
                     SlideContentGridB.BeginAnimation(UIElement.OpacityProperty, null);
-                    BackgroundImageA.BeginAnimation(UIElement.OpacityProperty, null);
-                    BackgroundImageB.BeginAnimation(UIElement.OpacityProperty, null);
+                    FadeOutActiveImages(0);
                     SlideContentGridA.Opacity = 0.0;
                     SlideContentGridB.Opacity = 0.0;
-                    BackgroundImageA.Opacity = 0.0;
-                    BackgroundImageB.Opacity = 0.0;
-                    BackgroundImageA.Source = null;
-                    BackgroundImageB.Source = null;
                 }
             }
             else
@@ -690,9 +678,10 @@ public partial class ProjectionWindow : Window
         Panel.SetZIndex(incomingGrid, 2);
         Panel.SetZIndex(outgoingGrid, 1);
 
-        bool isInitial = _isFirstRender || !IsLoaded;
+        bool isFirstSlideEver = (_lastSlideId == null && !wasCleared);
         bool useBlend = (string.Equals(effectiveSlideTransition, "Blend", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(effectiveSongTransition, "Blend", StringComparison.OrdinalIgnoreCase)) && !isInitial && effectiveDuration > 0;
+                        string.Equals(effectiveSongTransition, "Blend", StringComparison.OrdinalIgnoreCase)) &&
+                        !isFirstSlideEver && effectiveDuration > 0;
 
         if (useBlend && effectiveDuration > 0)
         {
@@ -863,8 +852,7 @@ public partial class ProjectionWindow : Window
             if (_currentActiveBg != null)
             {
                 _currentActiveBg = null;
-                AnimateFade(BackgroundImageA, BackgroundImageA.Opacity, 0.0, durationMs, () => BackgroundImageA.Source = null);
-                AnimateFade(BackgroundImageB, BackgroundImageB.Opacity, 0.0, durationMs, () => BackgroundImageB.Source = null);
+                FadeOutActiveImages(durationMs);
                 FadeOutActiveVideos(durationMs);
                 StopMpvBackgroundVideo();
             }
@@ -883,8 +871,7 @@ public partial class ProjectionWindow : Window
 
         if (bg.StartsWith("#"))
         {
-            AnimateFade(BackgroundImageA, BackgroundImageA.Opacity, 0.0, durationMs, () => BackgroundImageA.Source = null);
-            AnimateFade(BackgroundImageB, BackgroundImageB.Opacity, 0.0, durationMs, () => BackgroundImageB.Source = null);
+            FadeOutActiveImages(durationMs);
             FadeOutActiveVideos(durationMs);
             StopMpvBackgroundVideo();
             try
@@ -904,7 +891,7 @@ public partial class ProjectionWindow : Window
             {
                 // === Unified Single-Window Hardware Accelerated Video Background Engine ===
                 RootGrid.Background = Brushes.Black;
-                bool useBlend = string.Equals(transition, "Blend", StringComparison.OrdinalIgnoreCase) && !_isFirstRender && IsLoaded;
+                bool useBlend = string.Equals(transition, "Blend", StringComparison.OrdinalIgnoreCase) && durationMs > 0;
                 PlayBackgroundVideoMediaElement(bg, useBlend ? durationMs : 0);
             }
             else
@@ -920,36 +907,33 @@ public partial class ProjectionWindow : Window
 
                     incomingImg.BeginAnimation(UIElement.OpacityProperty, null);
                     incomingImg.Source = bitmap;
-                    Panel.SetZIndex(incomingImg, 4);
-                    Panel.SetZIndex(outgoingImg, 3);
-                    Panel.SetZIndex(BackgroundVideoElementA, 2);
-                    Panel.SetZIndex(BackgroundVideoElementB, 2);
 
-                    bool isInitial = _isFirstRender || !IsLoaded;
-                    bool useBlend = string.Equals(transition, "Blend", StringComparison.OrdinalIgnoreCase) && !isInitial;
+                    // Incoming image on top of outgoing image and videos, below lyrics
+                    Panel.SetZIndex(incomingImg, 6);
+                    Panel.SetZIndex(outgoingImg, 5);
+                    Panel.SetZIndex(BackgroundVideoElementA, 4);
+                    Panel.SetZIndex(BackgroundVideoElementB, 4);
 
-                    if (useBlend && durationMs > 0)
+                    bool useBlend = string.Equals(transition, "Blend", StringComparison.OrdinalIgnoreCase) && durationMs > 0;
+
+                    if (useBlend)
                     {
                         incomingImg.Opacity = 0.0;
-                        AnimateFade(incomingImg, 0.0, 1.0, durationMs, onCompleted: () =>
-                        {
-                            StopBackgroundVideo();
-                            StopMpvBackgroundVideo();
-                        });
+                        AnimateFade(incomingImg, 0.0, 1.0, durationMs);
 
                         if (outgoingImg.Source != null && outgoingImg.Opacity > 0.01)
                         {
                             var outRef = outgoingImg;
-                            int targetLayerIdx = _activeBgLayer;
                             AnimateFade(outRef, outRef.Opacity, 0.0, durationMs, () =>
                             {
-                                if (_activeBgLayer != targetLayerIdx)
-                                {
-                                    outRef.Source = null;
-                                    outRef.Opacity = 0.0;
-                                }
+                                outRef.BeginAnimation(UIElement.OpacityProperty, null);
+                                outRef.Source = null;
+                                outRef.Opacity = 0.0;
                             });
                         }
+
+                        FadeOutActiveVideos(durationMs);
+                        StopMpvBackgroundVideo();
                     }
                     else
                     {
@@ -967,8 +951,7 @@ public partial class ProjectionWindow : Window
                 catch
                 {
                     RootGrid.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#001833"));
-                    AnimateFade(BackgroundImageA, BackgroundImageA.Opacity, 0.0, durationMs, () => BackgroundImageA.Source = null);
-                    AnimateFade(BackgroundImageB, BackgroundImageB.Opacity, 0.0, durationMs, () => BackgroundImageB.Source = null);
+                    FadeOutActiveImages(durationMs);
                     StopBackgroundVideo();
                     StopMpvBackgroundVideo();
                 }
@@ -977,8 +960,7 @@ public partial class ProjectionWindow : Window
         else
         {
             RootGrid.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#001833"));
-            AnimateFade(BackgroundImageA, BackgroundImageA.Opacity, 0.0, durationMs, () => BackgroundImageA.Source = null);
-            AnimateFade(BackgroundImageB, BackgroundImageB.Opacity, 0.0, durationMs, () => BackgroundImageB.Source = null);
+            FadeOutActiveImages(durationMs);
             StopBackgroundVideo();
             StopMpvBackgroundVideo();
         }
@@ -994,8 +976,7 @@ public partial class ProjectionWindow : Window
         var incoming = incomingDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
         var outgoing = _activeMediaElementDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
 
-        _mediaElementCrossfadeTimer?.Stop();
-
+        incoming.BeginAnimation(UIElement.OpacityProperty, null);
         incoming.IsMuted = true;
         incoming.LoadedBehavior = MediaState.Manual;
         incoming.UnloadedBehavior = MediaState.Stop;
@@ -1005,70 +986,95 @@ public partial class ProjectionWindow : Window
         incoming.VerticalAlignment = VerticalAlignment.Stretch;
         incoming.Visibility = Visibility.Visible;
         incoming.Opacity = 0.0;
-        Panel.SetZIndex(incoming, 4);
-        Panel.SetZIndex(outgoing, 3);
-        Panel.SetZIndex(BackgroundImageA, 2);
-        Panel.SetZIndex(BackgroundImageB, 2);
+
+        // Bring incoming video to top of background stack, below lyrics (ZIndex 10)
+        Panel.SetZIndex(incoming, 6);
+        Panel.SetZIndex(outgoing, 5);
+        Panel.SetZIndex(BackgroundImageA, 4);
+        Panel.SetZIndex(BackgroundImageB, 4);
 
         incoming.Play();
 
-        bool hasActiveOutgoing = outgoing.Visibility == Visibility.Visible && outgoing.Source != null;
+        bool useBlend = durationMs > 0;
 
-        if (durationMs > 0 && hasActiveOutgoing && !_isFirstRender && IsLoaded)
+        if (useBlend)
         {
-            CrossfadeMediaElements(incomingDeck, durationMs);
+            bool hasStartedFade = false;
+            RoutedEventHandler? onMediaOpened = null;
+            System.Windows.Threading.DispatcherTimer? safetyTimer = null;
+
+            void TriggerCrossfade()
+            {
+                if (hasStartedFade) return;
+                hasStartedFade = true;
+
+                if (onMediaOpened != null)
+                {
+                    incoming.MediaOpened -= onMediaOpened;
+                }
+                safetyTimer?.Stop();
+
+                // 1. Fade in incoming video
+                AnimateFade(incoming, 0.0, 1.0, durationMs, () =>
+                {
+                    incoming.Opacity = 1.0;
+                });
+
+                // 2. Fade out outgoing video
+                if (outgoing.Visibility == Visibility.Visible && outgoing.Source != null && outgoing.Opacity > 0.01)
+                {
+                    var outDeck = outgoing;
+                    AnimateFade(outDeck, outDeck.Opacity, 0.0, durationMs, () =>
+                    {
+                        outDeck.BeginAnimation(UIElement.OpacityProperty, null);
+                        outDeck.Opacity = 0.0;
+                        outDeck.Stop();
+                        outDeck.Visibility = Visibility.Collapsed;
+                        outDeck.Source = null;
+                    });
+                }
+                else
+                {
+                    outgoing.BeginAnimation(UIElement.OpacityProperty, null);
+                    outgoing.Opacity = 0.0;
+                    outgoing.Stop();
+                    outgoing.Visibility = Visibility.Collapsed;
+                    outgoing.Source = null;
+                }
+
+                // 3. Fade out active images
+                FadeOutActiveImages(durationMs);
+
+                _activeMediaElementDeck = incomingDeck;
+            }
+
+            onMediaOpened = (s, e) => TriggerCrossfade();
+            incoming.MediaOpened += onMediaOpened;
+
+            // Safety fallback timer if MediaOpened takes longer or is primed
+            safetyTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(200)
+            };
+            safetyTimer.Tick += (s, e) =>
+            {
+                safetyTimer.Stop();
+                TriggerCrossfade();
+            };
+            safetyTimer.Start();
         }
         else
         {
             incoming.Opacity = 1.0;
+            outgoing.BeginAnimation(UIElement.OpacityProperty, null);
             outgoing.Opacity = 0.0;
             outgoing.Stop();
             outgoing.Visibility = Visibility.Collapsed;
             outgoing.Source = null;
+
+            FadeOutActiveImages(0);
             _activeMediaElementDeck = incomingDeck;
         }
-
-        FadeOutActiveImages(durationMs);
-    }
-
-    private void CrossfadeMediaElements(int incomingDeck, int durationMs)
-    {
-        _mediaElementCrossfadeTimer?.Stop();
-
-        var incoming = incomingDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
-        var outgoing = incomingDeck == 0 ? BackgroundVideoElementB : BackgroundVideoElementA;
-
-        Panel.SetZIndex(incoming, 4);
-        Panel.SetZIndex(outgoing, 3);
-        incoming.Opacity = 0.0;
-        outgoing.Opacity = 1.0;
-
-        DateTime startTime = DateTime.UtcNow;
-        _mediaElementCrossfadeTimer = new System.Windows.Threading.DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(16) // ~60fps smooth crossfade identical to libmpv
-        };
-
-        _mediaElementCrossfadeTimer.Tick += (s, e) =>
-        {
-            double elapsedMs = (DateTime.UtcNow - startTime).TotalMilliseconds;
-            double progress = Math.Clamp(elapsedMs / durationMs, 0.0, 1.0);
-
-            incoming.Opacity = progress;
-
-            if (progress >= 1.0)
-            {
-                _mediaElementCrossfadeTimer.Stop();
-                incoming.Opacity = 1.0;
-                outgoing.Opacity = 0.0;
-                outgoing.Stop();
-                outgoing.Visibility = Visibility.Collapsed;
-                outgoing.Source = null;
-                _activeMediaElementDeck = incomingDeck;
-            }
-        };
-
-        _mediaElementCrossfadeTimer.Start();
     }
 
     public void PlayMediaElementVideo(string filePath, bool isPlaying, bool isLooping, int durationMs = 0)
@@ -1081,8 +1087,7 @@ public partial class ProjectionWindow : Window
         var incoming = incomingDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
         var outgoing = _activeMediaElementDeck == 0 ? BackgroundVideoElementA : BackgroundVideoElementB;
 
-        _mediaElementCrossfadeTimer?.Stop();
-
+        incoming.BeginAnimation(UIElement.OpacityProperty, null);
         incoming.IsMuted = false;
         incoming.LoadedBehavior = MediaState.Manual;
         incoming.UnloadedBehavior = MediaState.Stop;
@@ -1092,27 +1097,88 @@ public partial class ProjectionWindow : Window
         incoming.VerticalAlignment = VerticalAlignment.Center;
         incoming.Visibility = Visibility.Visible;
         incoming.Opacity = 0.0;
-        Panel.SetZIndex(incoming, 4);
-        Panel.SetZIndex(outgoing, 3);
-        Panel.SetZIndex(BackgroundImageA, 2);
-        Panel.SetZIndex(BackgroundImageB, 2);
+
+        Panel.SetZIndex(incoming, 6);
+        Panel.SetZIndex(outgoing, 5);
+        Panel.SetZIndex(BackgroundImageA, 4);
+        Panel.SetZIndex(BackgroundImageB, 4);
 
         incoming.Play();
         if (!isPlaying) incoming.Pause();
 
-        bool hasActiveOutgoing = outgoing.Visibility == Visibility.Visible && outgoing.Source != null;
+        bool useBlend = durationMs > 0;
 
-        if (durationMs > 0 && hasActiveOutgoing && !_isFirstRender && IsLoaded)
+        if (useBlend)
         {
-            CrossfadeMediaElements(incomingDeck, durationMs);
+            bool hasStartedFade = false;
+            RoutedEventHandler? onMediaOpened = null;
+            System.Windows.Threading.DispatcherTimer? safetyTimer = null;
+
+            void TriggerCrossfade()
+            {
+                if (hasStartedFade) return;
+                hasStartedFade = true;
+
+                if (onMediaOpened != null)
+                {
+                    incoming.MediaOpened -= onMediaOpened;
+                }
+                safetyTimer?.Stop();
+
+                AnimateFade(incoming, 0.0, 1.0, durationMs, () =>
+                {
+                    incoming.Opacity = 1.0;
+                });
+
+                if (outgoing.Visibility == Visibility.Visible && outgoing.Source != null && outgoing.Opacity > 0.01)
+                {
+                    var outDeck = outgoing;
+                    AnimateFade(outDeck, outDeck.Opacity, 0.0, durationMs, () =>
+                    {
+                        outDeck.BeginAnimation(UIElement.OpacityProperty, null);
+                        outDeck.Opacity = 0.0;
+                        outDeck.Stop();
+                        outDeck.Visibility = Visibility.Collapsed;
+                        outDeck.Source = null;
+                    });
+                }
+                else
+                {
+                    outgoing.BeginAnimation(UIElement.OpacityProperty, null);
+                    outgoing.Opacity = 0.0;
+                    outgoing.Stop();
+                    outgoing.Visibility = Visibility.Collapsed;
+                    outgoing.Source = null;
+                }
+
+                FadeOutActiveImages(durationMs);
+                _activeMediaElementDeck = incomingDeck;
+            }
+
+            onMediaOpened = (s, e) => TriggerCrossfade();
+            incoming.MediaOpened += onMediaOpened;
+
+            safetyTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(200)
+            };
+            safetyTimer.Tick += (s, e) =>
+            {
+                safetyTimer.Stop();
+                TriggerCrossfade();
+            };
+            safetyTimer.Start();
         }
         else
         {
             incoming.Opacity = 1.0;
+            outgoing.BeginAnimation(UIElement.OpacityProperty, null);
             outgoing.Opacity = 0.0;
             outgoing.Stop();
             outgoing.Visibility = Visibility.Collapsed;
             outgoing.Source = null;
+
+            FadeOutActiveImages(0);
             _activeMediaElementDeck = incomingDeck;
         }
 
@@ -1129,11 +1195,9 @@ public partial class ProjectionWindow : Window
                 {
                     AnimateFade(img, img.Opacity, 0.0, durationMs, () =>
                     {
-                        if (_activeBgLayer != layerIdx)
-                        {
-                            img.Source = null;
-                            img.Opacity = 0.0;
-                        }
+                        img.BeginAnimation(UIElement.OpacityProperty, null);
+                        img.Source = null;
+                        img.Opacity = 0.0;
                     });
                 }
                 else
@@ -1150,17 +1214,40 @@ public partial class ProjectionWindow : Window
 
     private void FadeOutActiveVideos(int durationMs, Action? onCompleted = null)
     {
-        _mediaElementCrossfadeTimer?.Stop();
-        var active = ActiveMediaElement;
-        if (active.Visibility == Visibility.Visible && active.Opacity > 0.01 && durationMs > 0)
+        int completedCount = 0;
+        int totalToFade = 0;
+
+        void CheckCompleted()
         {
-            AnimateFade(active, active.Opacity, 0.0, durationMs, () =>
+            completedCount++;
+            if (completedCount >= totalToFade)
             {
                 StopBackgroundVideo();
                 onCompleted?.Invoke();
-            });
+            }
         }
-        else
+
+        void FadeVid(MediaElement el)
+        {
+            if (el.Visibility == Visibility.Visible && el.Opacity > 0.01 && durationMs > 0)
+            {
+                totalToFade++;
+                AnimateFade(el, el.Opacity, 0.0, durationMs, CheckCompleted);
+            }
+            else
+            {
+                el.BeginAnimation(UIElement.OpacityProperty, null);
+                el.Opacity = 0.0;
+                el.Stop();
+                el.Visibility = Visibility.Collapsed;
+                el.Source = null;
+            }
+        }
+
+        FadeVid(BackgroundVideoElementA);
+        FadeVid(BackgroundVideoElementB);
+
+        if (totalToFade == 0)
         {
             StopBackgroundVideo();
             onCompleted?.Invoke();
@@ -1206,14 +1293,15 @@ public partial class ProjectionWindow : Window
 
     private void StopBackgroundVideo()
     {
-        _mediaElementCrossfadeTimer?.Stop();
         try
         {
+            BackgroundVideoElementA.BeginAnimation(UIElement.OpacityProperty, null);
             BackgroundVideoElementA.Stop();
             BackgroundVideoElementA.Visibility = Visibility.Collapsed;
             BackgroundVideoElementA.Source = null;
             BackgroundVideoElementA.Opacity = 0.0;
 
+            BackgroundVideoElementB.BeginAnimation(UIElement.OpacityProperty, null);
             BackgroundVideoElementB.Stop();
             BackgroundVideoElementB.Visibility = Visibility.Collapsed;
             BackgroundVideoElementB.Source = null;

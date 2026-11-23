@@ -138,6 +138,12 @@ public class DataService : IDataService
                     _settings.LastUsedBackground = string.Empty;
                     SaveSettingsToFile();
                 }
+
+                if (string.Equals(_settings.VideoBackgroundEngine, "libmpv", StringComparison.OrdinalIgnoreCase))
+                {
+                    _settings.VideoBackgroundEngine = "MediaElement";
+                    SaveSettingsToFile();
+                }
             }
             catch { _settings = new(); }
         }
