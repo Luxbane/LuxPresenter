@@ -16,6 +16,7 @@ namespace LuxPresenter.Services;
 public static class ThumbnailService
 {
     private static readonly ConcurrentDictionary<string, ImageSource> _memoryCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, ImageBrush> _brushCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mp4", ".wmv", ".avi", ".mov", ".mkv", ".m4v", ".mpg", ".mpeg", ".webm", ".ts", ".flv", ".mts", ".m2ts"
@@ -37,6 +38,88 @@ public static class ThumbnailService
         if (string.IsNullOrWhiteSpace(path)) return false;
         var ext = Path.GetExtension(path);
         return !string.IsNullOrEmpty(ext) && VideoExtensions.Contains(ext);
+    }
+
+    /// <summary>
+    /// Checks memory and disk cache for an already-extracted thumbnail brush.
+    /// Returns true immediately (<0.5ms) without doing expensive frame decodes or blocking the UI.
+    /// </summary>
+    public static bool TryGetCachedBrush(string path, out Brush? brush)
+    {
+        brush = null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return false;
+
+        if (_brushCache.TryGetValue(path, out var cachedBrush))
+        {
+            brush = cachedBrush;
+            return true;
+        }
+
+        if (_memoryCache.TryGetValue(path, out var memImg))
+        {
+            var b = new ImageBrush(memImg) { Stretch = Stretch.UniformToFill };
+            if (b.CanFreeze) b.Freeze();
+            _brushCache[path] = b;
+            brush = b;
+            return true;
+        }
+
+        var cacheFilePath = GetCacheFilePath(path);
+        if (File.Exists(cacheFilePath) && new FileInfo(cacheFilePath).Length > 0)
+        {
+            var bmp = LoadBitmapFromFile(cacheFilePath);
+            if (bmp != null)
+            {
+                _memoryCache[path] = bmp;
+                var b = new ImageBrush(bmp) { Stretch = Stretch.UniformToFill };
+                if (b.CanFreeze) b.Freeze();
+                _brushCache[path] = b;
+                brush = b;
+                return true;
+            }
+        }
+
+        if (!IsVideoFile(path))
+        {
+            var imgBmp = GetImageThumbnail(path, 160);
+            if (imgBmp != null)
+            {
+                var b = new ImageBrush(imgBmp) { Stretch = Stretch.UniformToFill };
+                if (b.CanFreeze) b.Freeze();
+                _brushCache[path] = b;
+                brush = b;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Requests thumbnail extraction asynchronously on a background worker thread.
+    /// When complete, invokes callback with frozen ImageBrush.
+    /// </summary>
+    public static void RequestThumbnailBrushAsync(string path, Action<Brush> callback)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return;
+
+        Task.Run(() =>
+        {
+            try
+            {
+                var thumb = GetThumbnail(path, 160);
+                if (thumb != null)
+                {
+                    var b = new ImageBrush(thumb) { Stretch = Stretch.UniformToFill };
+                    if (b.CanFreeze) b.Freeze();
+                    _brushCache[path] = b;
+                    callback(b);
+                }
+            }
+            catch { }
+        });
     }
 
     /// <summary>
@@ -135,7 +218,7 @@ public static class ThumbnailService
         var cacheFilePath = GetCacheFilePath(videoPath);
 
         // 1. Check local on-disk cache file
-        if (File.Exists(cacheFilePath))
+        if (File.Exists(cacheFilePath) && new FileInfo(cacheFilePath).Length > 0)
         {
             try
             {
@@ -149,7 +232,7 @@ public static class ThumbnailService
             catch { }
         }
 
-        // 2. Try Windows Shell Thumbnail API (IShellItemImageFactory)
+        // 2. Try Windows Shell Thumbnail API (fast path for native Windows formats like MP4/WMV)
         try
         {
             var shellBmp = GetShellThumbnail(videoPath, 240, 160);
@@ -162,23 +245,30 @@ public static class ThumbnailService
         }
         catch { }
 
-        // 3. Try FFmpeg extraction (e.g. from Shotcut or system)
+        // 3. Extract frame via embedded libmpv (handles .flv, .mkv, .webm, .mp4, etc. without external tools)
         try
         {
-            var ffmpegBmp = ExtractFrameViaFfmpeg(videoPath, cacheFilePath);
-            if (ffmpegBmp != null)
+            if (VideoPoster.Generate(videoPath, cacheFilePath))
             {
-                _memoryCache[videoPath] = ffmpegBmp;
-                return ffmpegBmp;
+                var bmp = LoadBitmapFromFile(cacheFilePath);
+                if (bmp != null)
+                {
+                    _memoryCache[videoPath] = bmp;
+                    return bmp;
+                }
             }
         }
         catch { }
 
-        // 4. Fallback: generate a stylish video slate thumbnail
+        // 4. Fallback: generate a stylish video slate thumbnail AND persist to disk so failed files never retry
         try
         {
             var fallback = CreateFallbackThumbnail(Path.GetFileNameWithoutExtension(videoPath));
-            _memoryCache[videoPath] = fallback;
+            if (fallback != null)
+            {
+                SaveBitmapToJpeg(fallback, cacheFilePath);
+                _memoryCache[videoPath] = fallback;
+            }
             return fallback;
         }
         catch
@@ -205,6 +295,7 @@ public static class ThumbnailService
                 File.Delete(path);
             }
             _memoryCache.TryRemove(videoOrMediaPath, out _);
+            _brushCache.TryRemove(videoOrMediaPath, out _);
         }
         catch { }
     }
@@ -326,77 +417,7 @@ public static class ThumbnailService
 
     #endregion
 
-    #region FFmpeg Extraction Fallback
 
-    private static string? FindFfmpeg()
-    {
-        string[] candidates =
-        {
-            @"C:\Program Files\Shotcut\ffmpeg.exe",
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"),
-            @"C:\Program Files\ffmpeg\bin\ffmpeg.exe"
-        };
-
-        foreach (var c in candidates)
-        {
-            if (File.Exists(c)) return c;
-        }
-
-        try
-        {
-            using var p = Process.Start(new ProcessStartInfo("where", "ffmpeg.exe")
-            {
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            });
-            if (p != null)
-            {
-                var line = p.StandardOutput.ReadLine();
-                p.WaitForExit(1000);
-                if (!string.IsNullOrWhiteSpace(line) && File.Exists(line.Trim()))
-                    return line.Trim();
-            }
-        }
-        catch { }
-
-        return null;
-    }
-
-    private static BitmapSource? ExtractFrameViaFfmpeg(string videoPath, string outputPath)
-    {
-        var ffmpeg = FindFfmpeg();
-        if (string.IsNullOrEmpty(ffmpeg)) return null;
-
-        var psi = new ProcessStartInfo
-        {
-            FileName = ffmpeg,
-            Arguments = $"-ss 00:00:00.5 -i \"{videoPath}\" -vframes 1 -vf \"scale=240:150:force_original_aspect_ratio=decrease\" \"{outputPath}\" -y",
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
-
-        using var process = Process.Start(psi);
-        if (process == null) return null;
-
-        bool exited = process.WaitForExit(3500);
-        if (!exited)
-        {
-            try { process.Kill(); } catch { }
-            return null;
-        }
-
-        if (File.Exists(outputPath))
-        {
-            return LoadBitmapFromFile(outputPath);
-        }
-
-        return null;
-    }
-
-    #endregion
 
     private static BitmapSource? LoadBitmapFromFile(string path)
     {

@@ -21,7 +21,7 @@ public class HexOrImageBrushConverter : IValueConverter
             // Case 1: Value is a BackgroundEntry (from BackgroundOptionsWindow thumbnail grid)
             if (value is LuxPresenter.Views.BackgroundEntry bgEntry)
             {
-                value = bgEntry.BackgroundItem;
+                return bgEntry.ThumbnailBrush;
             }
 
             // Case 2: Value is a BackgroundItem
@@ -91,15 +91,21 @@ public class HexOrImageBrushConverter : IValueConverter
         if (_brushCache.TryGetValue(path, out var cachedBrush))
             return cachedBrush;
 
+        if (ThumbnailService.TryGetCachedBrush(path, out var brush) && brush is ImageBrush ib)
+        {
+            _brushCache[path] = ib;
+            return ib;
+        }
+
         try
         {
             var thumb = ThumbnailService.GetThumbnail(path, 160);
             if (thumb != null)
             {
-                var brush = new ImageBrush(thumb) { Stretch = Stretch.UniformToFill };
-                if (brush.CanFreeze) brush.Freeze();
-                _brushCache[path] = brush;
-                return brush;
+                var newBrush = new ImageBrush(thumb) { Stretch = Stretch.UniformToFill };
+                if (newBrush.CanFreeze) newBrush.Freeze();
+                _brushCache[path] = newBrush;
+                return newBrush;
             }
             return null;
         }

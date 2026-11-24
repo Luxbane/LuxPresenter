@@ -68,7 +68,7 @@
                     <!-- Slide preview -->
                     <Grid>
                         <!-- Slide preview with static thumbnail frame for video/image backgrounds -->
-                        <Rectangle x:Name="PreviewBackgroundRect" Fill="{Binding SelectedBackground, Converter={StaticResource HexOrImageBrushConverter}}"/>
+                        <Rectangle x:Name="PreviewBackgroundRect" Fill="{Binding SelectedEntry.ThumbnailBrush}"/>
 
                         <Rectangle Fill="#18000000"/>
                         <TextBlock x:Name="TxtPreviewContent"
@@ -146,7 +146,7 @@
                                         </Border.Style>
 
                                         <!-- Background fill (image or color) -->
-                                        <Grid Background="{Binding BackgroundItem, Converter={StaticResource HexOrImageBrushConverter}}"
+                                        <Grid Background="{Binding ThumbnailBrush}"
                                               ClipToBounds="True">
                                             <!-- Video icon overlay -->
                                             <Border HorizontalAlignment="Center" VerticalAlignment="Center"

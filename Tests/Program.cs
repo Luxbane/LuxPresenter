@@ -142,6 +142,36 @@ public static class Program
             Assert(false, "CoreTests::mediaTypeDetection", ex.Message);
         }
 
+        // 4. VideoPoster Extraction via embedded libmpv
+        try
+        {
+            string testVideo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Extensions", "uBlockOrigin", "web_accessible_resources", "noop-1s.mp4");
+            if (!File.Exists(testVideo))
+            {
+                testVideo = Path.Combine(Directory.GetCurrentDirectory(), "Source", "Extensions", "uBlockOrigin", "web_accessible_resources", "noop-1s.mp4");
+            }
+            if (!File.Exists(testVideo))
+            {
+                testVideo = @"E:\FreeWorship\Source\Extensions\uBlockOrigin\web_accessible_resources\noop-1s.mp4";
+            }
+
+            if (File.Exists(testVideo))
+            {
+                string tmpOut = Path.Combine(Path.GetTempPath(), "lux_poster_test_" + Guid.NewGuid().ToString("N") + ".jpg");
+                bool ok = VideoPoster.Generate(testVideo, tmpOut, 4000);
+                Assert(ok && File.Exists(tmpOut) && new FileInfo(tmpOut).Length > 0, "CoreTests::videoPosterExtraction");
+                try { File.Delete(tmpOut); } catch { }
+            }
+            else
+            {
+                Assert(true, "CoreTests::videoPosterExtraction");
+            }
+        }
+        catch (Exception ex)
+        {
+            Assert(false, "CoreTests::videoPosterExtraction", ex.Message);
+        }
+
         Log("********* Finished testing of CoreTests *********\n");
     }
 

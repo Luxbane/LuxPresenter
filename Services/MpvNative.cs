@@ -19,6 +19,9 @@ public static class MpvNative
     [DllImport(MpvDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mpv_set_option_string")]
     public static extern int mpv_set_option_string(IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, [MarshalAs(UnmanagedType.LPUTF8Str)] string data);
 
+    [DllImport(MpvDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mpv_command")]
+    public static extern int mpv_command(IntPtr ctx, IntPtr[] args);
+
     [DllImport(MpvDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mpv_command_string")]
     public static extern int mpv_command_string(IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)] string args);
 
