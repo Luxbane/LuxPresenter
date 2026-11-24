@@ -48,8 +48,8 @@ public static class VideoPoster
                     MpvNative.mpv_set_option_string(h, "aid", "no");
                     MpvNative.mpv_set_option_string(h, "sid", "no");
                     MpvNative.mpv_set_option_string(h, "frames", "1");
-                    MpvNative.mpv_set_option_string(h, "start", "10%");
-                    MpvNative.mpv_set_option_string(h, "hr-seek", "yes");
+                    MpvNative.mpv_set_option_string(h, "start", "0.5");
+                    MpvNative.mpv_set_option_string(h, "hr-seek", "no");
                     MpvNative.mpv_set_option_string(h, "keep-open", "no");
                     MpvNative.mpv_set_option_string(h, "idle", "yes");
                     MpvNative.mpv_set_option_string(h, "config", "no");
@@ -82,14 +82,14 @@ public static class VideoPoster
 
                     while (sw.ElapsedMilliseconds < timeoutMs)
                     {
-                        Thread.Sleep(30);
-                        var files = Directory.GetFiles(tmpDir, "*.jpg");
+                        Thread.Sleep(20);
+                        var files = Directory.GetFiles(tmpDir, "*.*");
                         string? idle = MpvNative.GetPropertyString(h, "idle-active");
                         bool isIdle = string.Equals(idle, "yes", StringComparison.OrdinalIgnoreCase);
 
                         if (!isIdle) started = true;
 
-                        if (files.Length > 0 && (isIdle || sw.ElapsedMilliseconds > 800))
+                        if (files.Length > 0)
                         {
                             produced = files[0];
                             break;
@@ -97,6 +97,10 @@ public static class VideoPoster
 
                         if (started && isIdle) break;
                     }
+
+                    // Terminate and destroy mpv instance FIRST so that all file locks on output files are fully released
+                    MpvNative.mpv_terminate_destroy(h);
+                    h = IntPtr.Zero;
 
                     if (!string.IsNullOrEmpty(produced) && File.Exists(produced) && new FileInfo(produced).Length > 0)
                     {
@@ -106,7 +110,10 @@ public static class VideoPoster
                 }
                 finally
                 {
-                    MpvNative.mpv_terminate_destroy(h);
+                    if (h != IntPtr.Zero)
+                    {
+                        MpvNative.mpv_terminate_destroy(h);
+                    }
                 }
             }
             catch

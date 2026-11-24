@@ -17,6 +17,7 @@ public static class ThumbnailService
 {
     private static readonly ConcurrentDictionary<string, ImageSource> _memoryCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, ImageBrush> _brushCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, byte> _activeRequests = new(StringComparer.OrdinalIgnoreCase);
     private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mp4", ".wmv", ".avi", ".mov", ".mkv", ".m4v", ".mpg", ".mpeg", ".webm", ".ts", ".flv", ".mts", ".m2ts"
@@ -105,6 +106,15 @@ public static class ThumbnailService
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             return;
 
+        if (TryGetCachedBrush(path, out var cached) && cached != null)
+        {
+            callback(cached);
+            return;
+        }
+
+        if (!_activeRequests.TryAdd(path, 0))
+            return;
+
         Task.Run(() =>
         {
             try
@@ -119,6 +129,10 @@ public static class ThumbnailService
                 }
             }
             catch { }
+            finally
+            {
+                _activeRequests.TryRemove(path, out _);
+            }
         });
     }
 

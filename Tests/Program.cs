@@ -161,6 +161,9 @@ public static class Program
                 bool ok = VideoPoster.Generate(testVideo, tmpOut, 4000);
                 Assert(ok && File.Exists(tmpOut) && new FileInfo(tmpOut).Length > 0, "CoreTests::videoPosterExtraction");
                 try { File.Delete(tmpOut); } catch { }
+
+                var thumb = ThumbnailService.GetThumbnail(testVideo, 160);
+                Assert(thumb != null, "CoreTests::getThumbnailVideo");
             }
             else
             {

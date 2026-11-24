@@ -130,6 +130,7 @@
                                             Margin="3"
                                             BorderThickness="2"
                                             Cursor="Hand"
+                                            ToolTip="{Binding Name}"
                                             PreviewMouseLeftButtonDown="OnThumbnailClick">
                                         <Border.Style>
                                             <Style TargetType="Border">
@@ -153,6 +154,11 @@
                                                     Visibility="{Binding IsVideo, Converter={StaticResource BoolToVis}}">
                                                 <TextBlock Text="▶" FontSize="20" Foreground="#AAFFFFFF"
                                                            FontWeight="Bold" TextAlignment="Center"/>
+                                            </Border>
+                                            <!-- Title banner at bottom of thumbnail -->
+                                            <Border VerticalAlignment="Bottom" Background="#8A000000" Padding="3,1">
+                                                <TextBlock Text="{Binding Name}" FontSize="9" Foreground="#F0F0F0"
+                                                           TextTrimming="CharacterEllipsis" TextAlignment="Center"/>
                                             </Border>
                                             <!-- Selection highlight -->
                                             <Border Background="#440078D7"
