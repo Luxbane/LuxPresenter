@@ -217,7 +217,8 @@ public class BackgroundWindowViewModel : ViewModelBase
         {
             Name = Path.GetFileNameWithoutExtension(path),
             FilePath = path,
-            Type = BackgroundOptionsWindow.DetectType(path)
+            Type = BackgroundOptionsWindow.DetectType(path),
+            HexColor = string.Empty
         };
         var entry = new BackgroundEntry(item);
         BackgroundItems.Add(entry);

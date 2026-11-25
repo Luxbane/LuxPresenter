@@ -164,6 +164,27 @@ public static class Program
 
                 var thumb = ThumbnailService.GetThumbnail(testVideo, 160);
                 Assert(thumb != null, "CoreTests::getThumbnailVideo");
+
+                // Verify BackgroundEntry prioritizes FilePath even when HexColor is default "#001833"
+                var bgItem = new BackgroundItem
+                {
+                    Name = "TestVideo",
+                    FilePath = testVideo,
+                    Type = BackgroundType.Video,
+                    HexColor = "#001833"
+                };
+                var entry = new Views.BackgroundEntry(bgItem);
+                Assert(entry.ThumbnailBrush is System.Windows.Media.ImageBrush, "CoreTests::backgroundEntryPrioritizesFileOverDefaultHex");
+
+                var colorItem = new BackgroundItem
+                {
+                    Name = "SolidBlue",
+                    FilePath = string.Empty,
+                    Type = BackgroundType.Color,
+                    HexColor = "#001833"
+                };
+                var colorEntry = new Views.BackgroundEntry(colorItem);
+                Assert(colorEntry.ThumbnailBrush is System.Windows.Media.SolidColorBrush, "CoreTests::backgroundEntryColorUsesHex");
             }
             else
             {

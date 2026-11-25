@@ -17,7 +17,7 @@ public static class ThumbnailService
 {
     private static readonly ConcurrentDictionary<string, ImageSource> _memoryCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, ImageBrush> _brushCache = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly ConcurrentDictionary<string, byte> _activeRequests = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, List<Action<Brush>>> _pendingCallbacks = new(StringComparer.OrdinalIgnoreCase);
     private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mp4", ".wmv", ".avi", ".mov", ".mkv", ".m4v", ".mpg", ".mpeg", ".webm", ".ts", ".flv", ".mts", ".m2ts"
@@ -112,11 +112,23 @@ public static class ThumbnailService
             return;
         }
 
-        if (!_activeRequests.TryAdd(path, 0))
+        bool shouldStart = false;
+        var callbacks = _pendingCallbacks.GetOrAdd(path, _ => new List<Action<Brush>>());
+        lock (callbacks)
+        {
+            if (callbacks.Count == 0)
+            {
+                shouldStart = true;
+            }
+            callbacks.Add(callback);
+        }
+
+        if (!shouldStart)
             return;
 
         Task.Run(() =>
         {
+            ImageBrush? resultBrush = null;
             try
             {
                 var thumb = GetThumbnail(path, 160);
@@ -125,13 +137,27 @@ public static class ThumbnailService
                     var b = new ImageBrush(thumb) { Stretch = Stretch.UniformToFill };
                     if (b.CanFreeze) b.Freeze();
                     _brushCache[path] = b;
-                    callback(b);
+                    resultBrush = b;
                 }
             }
             catch { }
             finally
             {
-                _activeRequests.TryRemove(path, out _);
+                List<Action<Brush>> toNotify;
+                lock (callbacks)
+                {
+                    toNotify = new List<Action<Brush>>(callbacks);
+                    callbacks.Clear();
+                    _pendingCallbacks.TryRemove(path, out _);
+                }
+
+                if (resultBrush != null)
+                {
+                    foreach (var cb in toNotify)
+                    {
+                        try { cb(resultBrush); } catch { }
+                    }
+                }
             }
         });
     }
@@ -454,14 +480,21 @@ public static class ThumbnailService
 
     private static void SaveBitmapToJpeg(BitmapSource source, string outputPath)
     {
+        string tmpPath = outputPath + ".tmp";
         try
         {
             var encoder = new JpegBitmapEncoder { QualityLevel = 85 };
             encoder.Frames.Add(BitmapFrame.Create(source));
-            using var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
-            encoder.Save(fs);
+            using (var fs = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                encoder.Save(fs);
+            }
+            File.Move(tmpPath, outputPath, overwrite: true);
         }
-        catch { }
+        catch
+        {
+            try { if (File.Exists(tmpPath)) File.Delete(tmpPath); } catch { }
+        }
     }
 
     private static BitmapSource CreateFallbackThumbnail(string title)

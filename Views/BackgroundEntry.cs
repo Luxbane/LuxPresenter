@@ -50,7 +50,35 @@ public class BackgroundEntry : ViewModelBase
 
     private void InitializeThumbnail()
     {
-        // 1. Color background
+        // 1. File background (Image or Video) — must be checked BEFORE HexColor because
+        // BackgroundItem.HexColor defaults to "#001833" even for video/image items.
+        if (!string.IsNullOrWhiteSpace(FilePath) && File.Exists(FilePath))
+        {
+            // Fast path: if thumbnail already exists in memory or disk cache, load instantly (<0.5ms)
+            if (ThumbnailService.TryGetCachedBrush(FilePath, out var cachedBrush) && cachedBrush != null)
+            {
+                ThumbnailBrush = cachedBrush;
+                return;
+            }
+
+            // Async path: keep dark fallback brush immediately so window opens with 0 latency,
+            // and fetch/generate thumbnail via embedded libmpv in background
+            ThumbnailService.RequestThumbnailBrushAsync(FilePath, brush =>
+            {
+                var dispatcher = Application.Current?.Dispatcher;
+                if (dispatcher != null)
+                {
+                    dispatcher.InvokeAsync(() => ThumbnailBrush = brush);
+                }
+                else
+                {
+                    ThumbnailBrush = brush;
+                }
+            });
+            return;
+        }
+
+        // 2. Color background (or fallback when file path is empty/missing)
         if (!string.IsNullOrWhiteSpace(HexColor) && HexColor.StartsWith("#"))
         {
             try
@@ -62,27 +90,6 @@ public class BackgroundEntry : ViewModelBase
                 return;
             }
             catch { }
-        }
-
-        // 2. File background (Image or Video)
-        if (!string.IsNullOrWhiteSpace(FilePath) && File.Exists(FilePath))
-        {
-            // Fast path: if thumbnail already exists in memory or disk cache, load instantly (<0.5ms)
-            if (ThumbnailService.TryGetCachedBrush(FilePath, out var cachedBrush) && cachedBrush != null)
-            {
-                ThumbnailBrush = cachedBrush;
-                return;
-            }
-
-            // Async path: set dark fallback brush immediately so window opens with 0 latency,
-            // and fetch/generate thumbnail via embedded libmpv in background
-            ThumbnailService.RequestThumbnailBrushAsync(FilePath, brush =>
-            {
-                Application.Current?.Dispatcher?.InvokeAsync(() =>
-                {
-                    ThumbnailBrush = brush;
-                });
-            });
         }
     }
 }

@@ -150,8 +150,12 @@ public static class VideoPoster
             var encoder = new JpegBitmapEncoder { QualityLevel = 85 };
             encoder.Frames.Add(BitmapFrame.Create(bmp));
 
-            using var outStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None);
-            encoder.Save(outStream);
+            string tmpTarget = targetPath + ".tmp";
+            using (var outStream = new FileStream(tmpTarget, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                encoder.Save(outStream);
+            }
+            File.Move(tmpTarget, targetPath, overwrite: true);
         }
         catch
         {
