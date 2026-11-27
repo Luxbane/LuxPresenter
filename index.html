@@ -64,11 +64,21 @@
       background-color: var(--bg-dark);
       color: var(--text-main);
       line-height: 1.6;
+      max-width: 100%;
       overflow-x: hidden;
+      overflow-x: clip;
       -webkit-font-smoothing: antialiased;
     }
 
     /* Ambient Background Gradients */
+    .ambient-wrapper {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
     .ambient-glow {
       position: absolute;
       width: 600px;
@@ -76,7 +86,6 @@
       border-radius: 50%;
       filter: blur(140px);
       pointer-events: none;
-      z-index: 0;
       opacity: 0.18;
     }
     .glow-1 {
@@ -784,8 +793,10 @@
 <body>
 
   <!-- Ambient Glow Backgrounds -->
-  <div class="ambient-glow glow-1"></div>
-  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-wrapper" aria-hidden="true">
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+  </div>
 
   <!-- Header / Nav -->
   <header>
