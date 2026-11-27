@@ -3,12 +3,13 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![Built With: Gemini 3.8 Flash](https://img.shields.io/badge/Built%20With-Gemini%203.8%20Flash-4E75F6.svg?logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![Built With: Gemini 4 Hydrogen](https://img.shields.io/badge/Built%20With-Gemini%204%20Hydrogen-8E75B2.svg?logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
 [![Built With: GPT 5.6 Luna](https://img.shields.io/badge/Built%20With-GPT%205.6%20Luna-10A37F.svg?logo=openai&logoColor=white)](https://openai.com/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20x64-0078D6.svg)](https://github.com/luxbane/LuxPresenter)
 [![itch.io](https://img.shields.io/badge/Download%20on-itch.io-FA5C5C.svg?logo=itchdotio&logoColor=white)](https://luxbane.itch.io/luxpresenter)
 [![Ko-fi](https://img.shields.io/badge/Support-Ko--fi-FF5E5B.svg?logo=kofi&logoColor=white)](https://ko-fi.com/luxbane)
 
-A high-performance, modern church presentation and worship projection software built with C# and WPF on .NET 10, developed and crafted with **Gemini 3.8 Flash & GPT 5.6 Luna**.
+A high-performance, modern church presentation and worship projection software built with C# and WPF on .NET 10, developed and crafted with **Gemini 3.8 Flash, Gemini 4 Hydrogen & GPT 5.6 Luna**.
 
 Designed as an intuitive, fast, and open alternative for church media operators and worship teams.
 
